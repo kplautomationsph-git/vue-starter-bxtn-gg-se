@@ -1,0 +1,89 @@
+{
+  "jobs": [
+    {
+      "id": "JOB-1001",
+      "date": "2026-02-03",
+      "title": "HVAC Maintenance - Johnson Residence",
+      "customer": "John Johnson",
+      "address": "123 Main St, Springfield",
+      "startTime": "09:00",
+      "endTime": "10:30",
+      "status": "scheduled",
+      "technician": "Alex Lee",
+      "priority": "high",
+      "ssra": "Y",
+      "notes": "Annual system tune-up and filter replacement."
+    },
+    {
+      "id": "JOB-1002",
+      "date": "2026-02-03",
+      "title": "Water Heater Inspection",
+      "customer": "Acme Industries",
+      "address": "500 Industrial Rd, Springfield",
+      "startTime": "11:00",
+      "endTime": "12:00",
+      "status": "in_progress",
+      "technician": "Morgan Diaz",
+      "priority": "medium",
+      "ssra": "N",
+      "notes": "Check pressure valve and replace if needed."
+    },
+    {
+      "id": "JOB-1003",
+      "date": "2026-02-03",
+      "title": "Emergency Leak Repair",
+      "customer": "Green Valley School",
+      "address": "42 Elm St, Springfield",
+      "startTime": "13:30",
+      "endTime": "15:00",
+      "status": "completed",
+      "technician": "Alex Lee",
+      "priority": "critical",
+      "ssra": "Y",
+      "notes": "Roof leak above gym; temporary patch applied."
+    },
+    {
+      "id": "JOB-1004",
+      "date": "2026-02-04",
+      "title": "New Install - Rooftop Unit",
+      "customer": "Sunrise Mall",
+      "address": "800 Market St, Springfield",
+      "startTime": "09:00",
+      "endTime": "14:00",
+      "status": "scheduled",
+      "technician": "Taylor Brown",
+      "priority": "high",
+      "ssra": "Y",
+      "notes": "Crane scheduled for 10:00 AM."
+    },
+    {
+      "id": "JOB-1005",
+      "date": "2026-02-05",
+      "title": "Duct Cleaning",
+      "customer": "Riverside Apartments",
+      "address": "22 River Rd, Springfield",
+      "startTime": "10:00",
+      "endTime": "13:00",
+      "status": "scheduled",
+      "technician": "Jordan Smith",
+      "priority": "low",
+      "ssra": "N",
+      "notes": "Building B, units 201–210."
+    },
+    {
+      "id": "JOB-1006",
+      "date": "2026-02-06",
+      "title": "System Diagnostics",
+      "customer": "Bright Future Clinic",
+      "address": "300 Health Way, Springfield",
+      "startTime": "08:30",
+      "endTime": "10:00",
+      "status": "cancelled",
+      "technician": "Morgan Diaz",
+      "priority": "medium",
+      "ssra": "N",
+      "notes": "Client cancelled; to be rescheduled next week."
+    }
+  ]
+}
+

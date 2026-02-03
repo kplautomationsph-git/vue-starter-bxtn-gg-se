@@ -30,8 +30,14 @@
   --color-border: var(--vt-c-divider-light-2);
   --color-border-hover: var(--vt-c-divider-light-1);
 
-  --color-heading: var(--vt-c-text-light-1);
-  --color-text: var(--vt-c-text-light-1);
+  /* Goop Guys brand-inspired colors */
+  --gg-color-primary: #582488;
+  --gg-color-secondary: #ffee00;
+  --gg-color-text: #1e1e1e;
+  --gg-color-accent: #61ce70;
+
+  --color-heading: var(--gg-color-text);
+  --color-text: var(--gg-color-text);
 
   --section-gap: 160px;
 }
@@ -61,7 +67,7 @@
 body {
   min-height: 100vh;
   color: var(--color-text);
-  background: var(--color-background);
+  background: #f5f5f7;
   transition:
     color 0.5s,
     background-color 0.5s;
