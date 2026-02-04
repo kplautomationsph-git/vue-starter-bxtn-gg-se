@@ -92,20 +92,66 @@ const statusColorMap = statusLegend.reduce(
 
 const activeStatusFilter = ref(null)
 
-const franchises = [
-  { value: '0', label: '' },
-  { value: '1', label: 'Goop Guys Head Office (0)' },
-  { value: '3', label: 'Goop Guys Mornington Peninsula (42)' },
-  { value: '6', label: 'Goop Guys Sunshine Coast South (16)' },
-  { value: '8', label: 'Goop Guys Toowoomba (0)' },
-  { value: '1014', label: 'Goop Guys Sunshine Coast North (12)' },
-  { value: '1015', label: 'Goop Guys Gold Coast H/O (32)' },
-  { value: '1017', label: 'Goop Guys Sydney North (11)' },
-  { value: '1021', label: 'Goop Guys Melbourne South East (42)' }
+const statusCodeToKey = {
+  '7': 'accepted',
+  '15': 'awaiting_reschedule',
+  '12': 'cancelled',
+  '1': 'completed',
+  '9': 'incomplete',
+  '28': 'incomplete_uppers',
+  '14': 'inv_head_office',
+  '11': 'invoiced',
+  '8': 'rejected',
+  '6': 'scheduled',
+  '4': 'tentative'
+}
+
+const statusKeyToCode = Object.entries(statusCodeToKey).reduce((acc, [code, key]) => {
+  acc[key] = code
+  return acc
+}, {})
+
+const franchiseBase = [
+  { value: '0', name: 'All' },
+  { value: '1', name: 'Goop Guys Head Office' },
+  { value: '3', name: 'Goop Guys Mornington Peninsula' },
+  { value: '6', name: 'Goop Guys Sunshine Coast South' },
+  { value: '8', name: 'Goop Guys Toowoomba' },
+  { value: '14', name: 'Goop Guys - TESTER' },
+  { value: '1014', name: 'Goop Guys Sunshine Coast North' },
+  { value: '1015', name: 'Goop Guys Gold Coast H/O' },
+  { value: '1016', name: 'Goop Guys Northern Rivers' },
+  { value: '1017', name: 'Goop Guys Sydney North' },
+  { value: '1021', name: 'Goop Guys Melbourne South East' },
+  { value: '1022', name: 'Goop Guys Adelaide' },
+  { value: '1027', name: 'Goop Guys Sydney South' },
+  { value: '1031', name: 'Goop Guys Wollongong' },
+  { value: '1040', name: 'Goop Guys Albury Wodonga Wagga' },
+  { value: '1051', name: 'Goop Guys Newcastle' },
+  { value: '1052', name: 'Goop Guys Central Coast' },
+  { value: '1058', name: 'Goop Guys Melbourne West' },
+  { value: '1060', name: 'Goop Guys Bendigo' },
+  { value: '1062', name: 'Goop Guys Ballarat' },
+  { value: '1065', name: 'Goop Guys Melbourne North' },
+  { value: '1066', name: 'Goop Guys Sydney North West' },
+  { value: '1067', name: 'Goop Guys Brisbane South' },
+  { value: '1068', name: 'Goop Guys Shepparton' },
+  { value: '1072', name: 'Goop Guys Brisbane North' },
+  { value: '1085', name: 'Goop Guys Sydney South West' },
+  { value: '1091', name: 'Goop Guys Brisbane West' },
+  { value: '1092', name: 'Goop Guys Geelong' },
+  { value: '1099', name: 'Goop Guys Gold Coast North' }
 ]
 
+const franchiseNameById = franchiseBase.reduce((acc, item) => {
+  if (item.value !== '0') {
+    acc[item.value] = item.name
+  }
+  return acc
+}, {})
+
 const jobStatusOptions = [
-  { value: '0', label: '' },
+  { value: '0', label: 'All' },
   { value: '7', label: 'Accepted' },
   { value: '15', label: 'Awaiting Reschedule Date' },
   { value: '12', label: 'Cancelled' },
@@ -121,15 +167,26 @@ const jobStatusOptions = [
 
 const selectedFranchise = ref('3')
 const addressFilter = ref('')
-const jobStatusFilter = ref('0')
+const jobStatusFilter = computed({
+  get() {
+    if (!activeStatusFilter.value) return '0'
+    return statusKeyToCode[activeStatusFilter.value] || '0'
+  },
+  set(value) {
+    if (value === '0') {
+      activeStatusFilter.value = null
+      return
+    }
+    const key = statusCodeToKey[value]
+    activeStatusFilter.value = key || null
+  }
+})
 
-const filteredJobs = computed(() => {
+const jobsMatchingFiltersNoFranchise = computed(() => {
   return scheduleData.jobs.filter((job) => {
     if (activeStatusFilter.value) {
       let jobStatusKey = String(job.status).toLowerCase()
-      // Treat in-progress jobs as "Incomplete" for legacy status mapping
       if (jobStatusKey === 'in_progress') jobStatusKey = 'incomplete'
-
       if (jobStatusKey !== activeStatusFilter.value) {
         return false
       }
@@ -142,6 +199,17 @@ const filteredJobs = computed(() => {
       }
     }
 
+    return true
+  })
+})
+
+const filteredJobs = computed(() => {
+  return jobsMatchingFiltersNoFranchise.value.filter((job) => {
+    if (selectedFranchise.value !== '0') {
+      if (!job.franchiseId || job.franchiseId !== selectedFranchise.value) {
+        return false
+      }
+    }
     return true
   })
 })
@@ -226,12 +294,68 @@ const weekRangeLabel = computed(() => {
   return `${startStr} – ${endStr}`
 })
 
+const weekNumberLabel = computed(() => {
+  const start = currentWeekStart.value
+  const startOfYear = new Date(start.getFullYear(), 0, 1)
+  const diffDays = Math.floor((start - startOfYear) / (1000 * 60 * 60 * 24))
+  const weekNumber = Math.floor(diffDays / 7) + 1
+  return weekNumber.toString()
+})
+
 const monthRangeLabel = computed(() => {
   const parts = selectedDate.value.split('-')
   if (parts.length !== 3) return currentMonthLabel.value
   const [year, month] = parts
   const date = new Date(Number(year), Number(month) - 1, 1)
   return date.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
+})
+
+const jobsInCurrentScope = computed(() => {
+  return jobsMatchingFiltersNoFranchise.value.filter((job) => {
+    const jobDate = new Date(job.date)
+    if (Number.isNaN(jobDate.getTime())) return false
+
+    if (viewMode.value === 'day') {
+      return job.date === selectedDate.value
+    }
+
+    if (viewMode.value === 'week') {
+      const start = currentWeekStart.value
+      const end = addDays(currentWeekStart.value, 5)
+      return jobDate >= start && jobDate <= end
+    }
+
+    // month
+    const parts = selectedDate.value.split('-')
+    if (parts.length !== 3) return false
+    const [yearStr, monthStr] = parts
+    const year = Number(yearStr)
+    const monthIndex = Number(monthStr) - 1
+    return jobDate.getFullYear() === year && jobDate.getMonth() === monthIndex
+  })
+})
+
+const franchiseCounts = computed(() => {
+  const counts = {}
+  jobsInCurrentScope.value.forEach((job) => {
+    const id = job.franchiseId || '0'
+    counts[id] = (counts[id] || 0) + 1
+  })
+  return counts
+})
+
+const franchises = computed(() => {
+  return franchiseBase.map((item) => {
+    if (item.value === '0') {
+      const total = jobsInCurrentScope.value.length
+      return { value: item.value, label: `All (${total})` }
+    }
+    const count = franchiseCounts.value[item.value] || 0
+    return {
+      value: item.value,
+      label: `${item.name} (${count})`
+    }
+  })
 })
 
 const monthCalendarWeeks = computed(() => {
@@ -286,6 +410,62 @@ const dashboardTodayLabel = computed(() => {
     day: 'numeric'
   })
 })
+
+const jobsCountLabel = (count) => {
+  if (!count) return '0 jobs'
+  return `${count} job${count === 1 ? '' : 's'}`
+}
+
+const smsAlertsDueForDate = (dateKey) => {
+  const jobs = jobsByDate.value[dateKey] || []
+  // Simple heuristic: SMS alerts due for non-completed jobs
+  return jobs.filter((job) => {
+    const status = String(job.status).toLowerCase()
+    return !['completed', 'cancelled', 'rejected'].includes(status)
+  }).length
+}
+
+const smsAlertsDueInCurrentScope = computed(() => {
+  const jobs = jobsInCurrentScope.value
+  return jobs.filter((job) => {
+    const status = String(job.status).toLowerCase()
+    return !['completed', 'cancelled', 'rejected'].includes(status)
+  }).length
+})
+
+const formatSmsSummary = (count, scope) => {
+  const base = `${count} SMS Alert${count === 1 ? '' : 's'} Due`
+  return `${base}`
+}
+
+const formatJobsSummary = (count, scope) => {
+  const statusKey = activeStatusFilter.value
+  let statusPrefix = ''
+  if (statusKey) {
+    const legendItem = statusLegend.find((item) => item.key === statusKey)
+    if (legendItem?.label) {
+      statusPrefix = `${legendItem.label.toUpperCase()} `
+    }
+  }
+
+  if (!count) {
+    const jobsWord = 'Jobs'
+    return `No ${statusPrefix}${jobsWord}`
+  }
+
+  const jobWord = count === 1 ? 'Job' : 'Jobs'
+  return `${count} ${statusPrefix}${jobWord}`
+}
+
+const handleAddJobForCurrentView = () => {
+  if (viewMode.value === 'day') {
+    window.alert?.(`Add job for ${selectedDateLabel.value}`)
+  } else if (viewMode.value === 'week') {
+    window.alert?.(`Add job for Week ${weekNumberLabel.value}`)
+  } else {
+    window.alert?.(`Add job for ${monthRangeLabel.value}`)
+  }
+}
 
 const dashboardStats = computed(() => {
   const currentYear = today.getFullYear()
@@ -447,12 +627,29 @@ const formatTime12 = (time) => {
   return `${String(hour).padStart(2, '0')}:${minute} ${suffix}`
 }
 
+const formatPriority = (priority) => {
+  if (!priority) return ''
+  const str = String(priority)
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase()
+}
+
 const setStatusFilter = (key) => {
   if (key === null) {
     activeStatusFilter.value = null
     return
   }
   activeStatusFilter.value = activeStatusFilter.value === key ? null : key
+}
+
+const resetFilters = () => {
+  addressFilter.value = ''
+  jobStatusFilter.value = '0'
+}
+
+const showAllJobs = () => {
+  selectedFranchise.value = '0'
+  addressFilter.value = ''
+  activeStatusFilter.value = null
 }
 </script>
 
@@ -530,14 +727,23 @@ const setStatusFilter = (key) => {
             <span class="legend-note">R = Has Repeats</span>
             <span class="legend-note">N = Has Job Notes</span>
           </div>
-          <button
-            type="button"
-            class="all-jobs-button"
-            :class="{ 'is-active': !activeStatusFilter }"
-            @click="setStatusFilter(null)"
-          >
-            All Jobs
-          </button>
+          <div class="legend-actions">
+            <button
+              type="button"
+              class="all-jobs-button"
+              :class="{ 'is-active': !activeStatusFilter }"
+              @click="showAllJobs"
+            >
+              All Jobs
+            </button>
+            <button
+              type="button"
+              class="reset-filters-button"
+              @click="resetFilters"
+            >
+              Reset filters
+            </button>
+          </div>
         </div>
         <div class="legend-swatches">
           <div
@@ -602,23 +808,6 @@ const setStatusFilter = (key) => {
           </select>
         </div>
 
-        <div class="filter-actions">
-          <button type="button" class="filter-button filter-button-primary">
-            Load Jobs
-          </button>
-          <button
-            type="button"
-            class="filter-button filter-button-secondary"
-            @click="
-              () => {
-                addressFilter = ''
-                jobStatusFilter = '0'
-              }
-            "
-          >
-            Clear Form
-          </button>
-        </div>
       </div>
     </section>
 
@@ -631,7 +820,7 @@ const setStatusFilter = (key) => {
                 {{ selectedDateLabel }}
               </span>
               <span v-else-if="viewMode === 'week'">
-                Week of {{ weekRangeLabel }}
+                Week {{ weekNumberLabel }}
               </span>
               <span v-else>
                 {{ monthRangeLabel }}
@@ -639,30 +828,35 @@ const setStatusFilter = (key) => {
             </h2>
             <p class="jobs-subtitle">
               <span v-if="viewMode === 'day'">
-                {{
-                  jobsForSelectedDate.length
-                    ? `${jobsForSelectedDate.length} job${
-                        jobsForSelectedDate.length > 1 ? 's' : ''
-                      } scheduled`
-                    : 'No jobs scheduled for this day.'
-                }}
+                {{ formatJobsSummary(jobsForSelectedDate.length, 'day') }}
               </span>
               <span v-else-if="viewMode === 'week'">
                 {{
-                  jobsForCurrentWeek
-                    .reduce((acc, day) => acc + day.jobs.length, 0)
-                    .toString()
+                  formatJobsSummary(
+                    jobsForCurrentWeek.reduce((acc, day) => acc + day.jobs.length, 0),
+                    'week'
+                  )
                 }}
-                jobs scheduled this week
               </span>
               <span v-else>
                 {{
-                  jobsForCurrentMonth
-                    .reduce((acc, day) => acc + day.jobs.length, 0)
-                    .toString()
+                  formatJobsSummary(
+                    jobsForCurrentMonth.reduce((acc, day) => acc + day.jobs.length, 0),
+                    'month'
+                  )
                 }}
-                jobs scheduled this month
               </span>
+            </p>
+            <p
+              v-if="smsAlertsDueInCurrentScope"
+              class="jobs-subtitle jobs-subtitle-secondary jobs-subtitle-secondary--sms"
+            >
+              {{
+                formatSmsSummary(
+                  smsAlertsDueInCurrentScope,
+                  viewMode === 'day' ? 'day' : viewMode === 'week' ? 'week' : 'month'
+                )
+              }}
             </p>
           </div>
 
@@ -724,6 +918,16 @@ const setStatusFilter = (key) => {
         </header>
 
         <div class="jobs-list" v-if="viewMode === 'day'">
+          <div class="jobs-day-add-row">
+            <button
+              type="button"
+              class="jobs-add-button"
+              aria-label="Add job for this day"
+              @click="() => window.alert?.(`Add job for ${selectedDateLabel}`)"
+            >
+              +
+            </button>
+          </div>
           <article v-for="job in jobsForSelectedDate" :key="job.id" class="job-card">
             <div class="job-status-ribbon" :style="statusStyle(job.status)">
               {{ statusLabel(job.status) }}
@@ -757,7 +961,7 @@ const setStatusFilter = (key) => {
               </p>
               <div class="job-footer">
                 <span class="job-priority" :class="`priority-${job.priority}`">
-                  Priority: {{ job.priority }}
+                  Priority: {{ formatPriority(job.priority) }}
                 </span>
               </div>
               <div class="job-meta-row">
@@ -775,6 +979,10 @@ const setStatusFilter = (key) => {
                 {{ job.notes }}
               </p>
             </div>
+
+            <div class="job-franchise-footer">
+              {{ franchiseNameById[job.franchiseId] || 'Franchise: N/A' }}
+            </div>
           </article>
         </div>
 
@@ -786,13 +994,23 @@ const setStatusFilter = (key) => {
           >
             <header class="jobs-day-header">
               <span class="jobs-day-label">{{ day.label }}</span>
-              <span class="jobs-day-count">
-                {{
-                  day.jobs.length
-                    ? `${day.jobs.length} job${day.jobs.length > 1 ? 's' : ''}`
-                    : 'No jobs'
-                }}
-              </span>
+              <div class="jobs-day-metrics">
+                <span class="jobs-day-count">
+                  {{
+                    day.jobs.length ? jobsCountLabel(day.jobs.length) : 'No jobs'
+                  }}
+                </span>
+                <span
+                  v-if="day.jobs.length && smsAlertsDueForDate(day.dateKey)"
+                  class="jobs-day-sms"
+                >
+                  {{
+                    `${smsAlertsDueForDate(day.dateKey)} SMS Alert${
+                      smsAlertsDueForDate(day.dateKey) === 1 ? '' : 's'
+                    } Due`
+                  }}
+                </span>
+              </div>
               <button
                 type="button"
                 class="jobs-add-button"
@@ -811,7 +1029,7 @@ const setStatusFilter = (key) => {
               <div class="job-status-ribbon" :style="statusStyle(job.status)">
                 {{ statusLabel(job.status) }}
               </div>
-              <div class="job-row">
+              <header class="job-header">
                 <div>
                   <h3 class="job-title">
                     {{ job.title }}
@@ -820,23 +1038,47 @@ const setStatusFilter = (key) => {
                     {{ job.id }} • {{ job.customer }}
                   </p>
                 </div>
+
                 <div class="job-meta">
                   <span class="job-time">
                     {{ job.startTime }} - {{ job.endTime }}
                   </span>
                 </div>
+              </header>
+
+              <div class="job-body">
+                <p v-if="jobCompletedLabel(job)" class="job-completed">
+                  {{ jobCompletedLabel(job) }}
+                </p>
+                <p class="job-address">
+                  {{ job.address }}
+                </p>
+                <p class="job-time-tech">
+                  {{ formatTime12(job.startTime) }} {{ job.technician }}
+                </p>
+                <div class="job-footer">
+                  <span class="job-priority" :class="`priority-${job.priority}`">
+                    Priority: {{ formatPriority(job.priority) }}
+                  </span>
+                </div>
+                <div class="job-meta-row">
+                  <span class="job-meta-chip">
+                    Accepted: {{ job.startTime || '—' }}
+                  </span>
+                  <span class="job-meta-chip">
+                    SSRA: {{ job.ssra || '—' }}
+                  </span>
+                  <span class="job-meta-chip">
+                    Completed: {{ job.endTime || '—' }}
+                  </span>
+                </div>
+                <p v-if="job.notes" class="job-notes">
+                  {{ job.notes }}
+                </p>
               </div>
 
-              <div class="job-row job-row-secondary">
-                <span class="job-address">
-                  {{ job.address }}
-                </span>
-                <span class="job-technician">
-                  Tech: {{ job.technician }}
-                </span>
-                <span class="job-priority" :class="`priority-${job.priority}`">
-                  Priority: {{ job.priority }}
-                </span>
+              <div class="job-franchise-footer">
+                {{ franchiseNameById[job.franchiseId] || 'Franchise: N/A' }}
               </div>
             </article>
           </section>
@@ -872,9 +1114,29 @@ const setStatusFilter = (key) => {
                   <span class="month-calendar-day-number">
                     {{ day.dayOfMonth }}
                   </span>
-                  <span v-if="day.jobs.length" class="month-calendar-day-count">
-                    {{ day.jobs.length }}
-                  </span>
+                  <div class="month-calendar-day-metrics">
+                    <span v-if="day.jobs.length" class="month-calendar-day-count">
+                      {{ jobsCountLabel(day.jobs.length) }}
+                    </span>
+                    <span
+                      v-if="smsAlertsDueForDate(day.key)"
+                      class="month-calendar-sms-count"
+                    >
+                      {{
+                        `${smsAlertsDueForDate(day.key)} SMS Alert${
+                          smsAlertsDueForDate(day.key) === 1 ? '' : 's'
+                        } Due`
+                      }}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    class="month-add-button"
+                    aria-label="Add job for this day"
+                    @click="() => window.alert?.(`Add job for ${day.date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`)"
+                  >
+                    +
+                  </button>
                 </div>
                 <div class="month-calendar-day-jobs">
                   <div
@@ -889,6 +1151,27 @@ const setStatusFilter = (key) => {
                     <span class="month-calendar-job-title">
                       {{ job.title }}
                     </span>
+
+                    <div class="month-job-tooltip">
+                      <div class="month-job-tooltip-title">
+                        {{ job.title }}
+                      </div>
+                      <div class="month-job-tooltip-line">
+                        <strong>{{ statusLabel(job.status) }}</strong>
+                        • {{ job.id }}
+                      </div>
+                      <div class="month-job-tooltip-line">
+                        {{ job.startTime }} - {{ job.endTime }} &nbsp;•&nbsp;
+                        {{ formatTime12(job.startTime) }} {{ job.technician }}
+                      </div>
+                      <div class="month-job-tooltip-line">
+                        {{ job.address }}
+                      </div>
+                      <div class="month-job-tooltip-line">
+                        Franchise:
+                        {{ franchiseNameById[job.franchiseId] || 'N/A' }}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1046,6 +1329,12 @@ const setStatusFilter = (key) => {
   font-weight: 500;
 }
 
+.legend-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .legend-swatches {
   display: flex;
   flex-wrap: wrap;
@@ -1062,13 +1351,19 @@ const setStatusFilter = (key) => {
   white-space: normal;
   cursor: pointer;
   opacity: 0.8;
-  transition: transform 0.1s ease-out, box-shadow 0.1s ease-out, opacity 0.1s ease-out;
+  border: 2px solid transparent;
+  transition:
+    transform 0.1s ease-out,
+    box-shadow 0.1s ease-out,
+    opacity 0.1s ease-out,
+    border-color 0.1s ease-out;
 }
 
 .legend-swatch.is-active {
   opacity: 1;
-  box-shadow: 0 0 0 2px rgba(31, 41, 55, 0.15);
-  transform: translateY(-1px);
+  box-shadow: 0 0 0 2px rgba(31, 41, 55, 0.18);
+  border-color: var(--gg-color-secondary);
+  transform: translateY(-1px) scale(1.08);
 }
 
 .all-jobs-button {
@@ -1086,6 +1381,17 @@ const setStatusFilter = (key) => {
 .all-jobs-button.is-active {
   border-color: var(--gg-color-primary);
   color: var(--gg-color-primary);
+}
+
+.reset-filters-button {
+  border-radius: 999px;
+  border: none;
+  padding: 0.3rem 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
 }
 
 .filters-row {
@@ -1315,6 +1621,13 @@ const setStatusFilter = (key) => {
 .jobs-subtitle {
   font-size: 0.9rem;
   color: #6b7280;
+  margin-bottom: 0.1rem;
+}
+
+.jobs-subtitle-secondary {
+  font-size: 0.8rem;
+  color: #b91c1c;
+  margin-top: 0;
 }
 
 .view-toggle {
@@ -1383,7 +1696,7 @@ const setStatusFilter = (key) => {
 .jobs-day-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 0.35rem;
 }
 
@@ -1398,6 +1711,19 @@ const setStatusFilter = (key) => {
   color: #6b7280;
 }
 
+.jobs-day-metrics {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.05rem;
+}
+
+.jobs-day-sms {
+  font-size: 0.78rem;
+  color: #b91c1c;
+}
+
 .jobs-add-button {
   border-radius: 999px;
   border: 1px solid rgba(209, 213, 219, 1);
@@ -1410,6 +1736,43 @@ const setStatusFilter = (key) => {
   cursor: pointer;
   background: #ffffff;
   color: #111827;
+  position: relative;
+}
+
+.jobs-add-button:hover {
+  background: rgba(255, 238, 0, 0.18);
+  border-color: rgba(88, 36, 136, 0.6);
+}
+
+.jobs-add-button::after {
+  content: 'Add Job';
+  position: absolute;
+  top: 120%;
+  left: 50%;
+  transform: translate(-50%, 4px);
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: #111827;
+  color: #f9fafb;
+  font-size: 0.7rem;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.35);
+  transition:
+    opacity 0.12s ease-out,
+    transform 0.12s ease-out;
+}
+
+.jobs-add-button:hover::after,
+.jobs-add-button:focus-visible::after {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.jobs-day-add-row {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .month-calendar {
@@ -1479,25 +1842,82 @@ const setStatusFilter = (key) => {
   color: #111827;
 }
 
+.month-calendar-day-metrics {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.05rem;
+}
+
 .month-calendar-day-count {
-  min-width: 1.25rem;
-  height: 1.25rem;
-  border-radius: 999px;
-  background: #e5e7eb;
+  min-width: auto;
+  height: auto;
+  border-radius: 0;
+  background: transparent;
+  font-size: 0.72rem;
+  font-weight: 500;
+  display: inline-block;
+  color: #6b7280;
+}
+
+.month-calendar-sms-count {
   font-size: 0.7rem;
-  font-weight: 600;
-  display: inline-flex;
+  color: #b91c1c;
+}
+
+.month-add-button {
+  border-radius: 999px;
+  border: 1px solid rgba(209, 213, 219, 1);
+  width: 1.4rem;
+  height: 1.4rem;
+  display: flex;
   align-items: center;
   justify-content: center;
-  color: #374151;
+  font-size: 0.9rem;
+  cursor: pointer;
+  background: #ffffff;
+  color: #111827;
+  position: relative;
+}
+
+.month-add-button:hover {
+  background: rgba(255, 238, 0, 0.18);
+  border-color: rgba(88, 36, 136, 0.6);
+}
+
+.month-add-button::after {
+  content: 'Add Job';
+  position: absolute;
+  top: 120%;
+  left: 50%;
+  transform: translate(-50%, 4px);
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: #111827;
+  color: #f9fafb;
+  font-size: 0.7rem;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.35);
+  transition:
+    opacity 0.12s ease-out,
+    transform 0.12s ease-out;
+}
+
+.month-add-button:hover::after,
+.month-add-button:focus-visible::after {
+  opacity: 1;
+  transform: translate(-50%, 0);
 }
 
 .month-calendar-day-jobs {
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
-  margin-top: 0.1rem;
-  overflow: hidden;
+  margin-top: 0.25rem;
+  overflow: visible;
 }
 
 .month-calendar-job-chip {
@@ -1509,8 +1929,9 @@ const setStatusFilter = (key) => {
   font-size: 0.7rem;
   font-weight: 500;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow: visible;
+  position: relative;
+  cursor: pointer;
 }
 
 .month-calendar-job-status {
@@ -1521,6 +1942,56 @@ const setStatusFilter = (key) => {
 .month-calendar-job-title {
   font-weight: 500;
   opacity: 0.95;
+  max-width: 6.5rem;
+  display: inline-block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.month-calendar-job-franchise {
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+.month-job-tooltip {
+  position: absolute;
+  top: 125%;
+  left: 0;
+  z-index: 20;
+  min-width: 220px;
+  max-width: 320px;
+  padding: 0.6rem 0.8rem;
+  border-radius: 0.75rem;
+  background: #ffffff;
+  box-shadow: 0 10px 18px rgba(15, 23, 42, 0.2);
+  border: 1px solid rgba(209, 213, 219, 0.9);
+  font-size: 0.75rem;
+  color: #111827;
+  line-height: 1.35;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(4px);
+  transition:
+    opacity 0.12s ease-out,
+    transform 0.12s ease-out;
+  background-clip: padding-box;
+}
+
+.month-calendar-job-chip:hover .month-job-tooltip,
+.month-calendar-job-chip:focus-within .month-job-tooltip {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.month-job-tooltip-title {
+  font-weight: 600;
+  margin-bottom: 0.1rem;
+}
+
+.month-job-tooltip-line {
+  color: #4b5563;
 }
 
 .job-card {
@@ -1624,6 +2095,30 @@ const setStatusFilter = (key) => {
   background: #f3f4f6;
 }
 
+.job-franchise-chip {
+  background: #eef2ff;
+}
+
+.job-franchise-footer {
+  margin-top: 0.4rem;
+  margin-left: -1rem;
+  margin-right: -1rem;
+  margin-bottom: -0.9rem;
+  padding: 0.35rem 1rem;
+  border-radius: 0 0 0.75rem 0.75rem;
+  background: #eef2ff;
+  border-top: 1px solid rgba(209, 213, 219, 0.9);
+  font-size: 0.72rem;
+  color: #4b5563;
+}
+
+.job-card-condensed .job-franchise-footer {
+  margin-left: -0.8rem;
+  margin-right: -0.8rem;
+  margin-bottom: -0.6rem;
+  padding-inline: 0.8rem;
+}
+
 .job-time-tech {
   font-size: 0.78rem;
   color: #111827;
@@ -1717,21 +2212,26 @@ const setStatusFilter = (key) => {
 @media (max-width: 960px) {
   .schedule-header {
     flex-direction: column;
-  }
-
-  .schedule-body {
-    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
   }
 }
 
 @media (max-width: 640px) {
   .schedule-summary {
     width: 100%;
-    justify-content: flex-start;
+    justify-content: space-between;
   }
 
   .summary-card {
     flex: 1;
+  }
+
+  .filters-row {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-actions {
+    justify-content: flex-start;
   }
 
   .calendar-week {
@@ -1741,6 +2241,36 @@ const setStatusFilter = (key) => {
   .jobs-header {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .jobs-header-controls {
+    width: 100%;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .jobs-nav {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .jobs-today-button {
+    align-self: flex-start;
+  }
+
+  .view-toggle {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .jobs-week-grid {
+    flex-direction: column;
+    overflow-x: visible;
+  }
+
+  .jobs-week-column {
+    width: 100%;
   }
 
   .job-header {
