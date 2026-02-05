@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, provide } from 'vue'
 import { RouterLink, RouterView } from 'vue-router'
 
 const todayLabel = new Date().toLocaleDateString(undefined, {
@@ -15,6 +15,9 @@ const franchise = 'Goop Guys Gold Coast H/O'
 const userLevel = 'Administrator'
 
 const isMobileNavOpen = ref(false)
+const isHeaderCollapsed = ref(false)
+
+provide('isHeaderCollapsed', isHeaderCollapsed)
 
 const toggleMobileNav = () => {
   isMobileNavOpen.value = !isMobileNavOpen.value
@@ -22,6 +25,10 @@ const toggleMobileNav = () => {
 
 const closeMobileNav = () => {
   isMobileNavOpen.value = false
+}
+
+const toggleHeaderSummary = () => {
+  isHeaderCollapsed.value = !isHeaderCollapsed.value
 }
 </script>
 
@@ -94,6 +101,15 @@ const closeMobileNav = () => {
             <a href="#" class="gg-nav-link">Support Log</a>
           </li>
           <li class="gg-nav-item gg-nav-item-right">
+            <button
+              type="button"
+              class="gg-nav-toggle-summary"
+              @click="toggleHeaderSummary"
+            >
+              {{ isHeaderCollapsed ? 'Show summary' : 'Hide summary' }}
+            </button>
+          </li>
+          <li class="gg-nav-item">
             <a href="#" class="gg-nav-link gg-nav-link-logout">Log Out</a>
           </li>
         </ul>
@@ -140,6 +156,15 @@ const closeMobileNav = () => {
             </li>
             <li class="gg-mobile-nav-item">
               <a href="#" class="gg-mobile-nav-link">Support Log</a>
+            </li>
+            <li class="gg-mobile-nav-item">
+              <button
+                type="button"
+                class="gg-mobile-nav-toggle-summary"
+                @click="toggleHeaderSummary"
+              >
+                {{ isHeaderCollapsed ? 'Show summary header' : 'Hide summary header' }}
+              </button>
             </li>
             <li class="gg-mobile-nav-item">
               <a href="#" class="gg-mobile-nav-link gg-mobile-nav-link-logout">Log Out</a>
@@ -283,6 +308,22 @@ const closeMobileNav = () => {
   color: #fca5a5;
 }
 
+.gg-nav-toggle-summary {
+  border-radius: 999px;
+  border: 1px solid rgba(55, 65, 81, 0.6);
+  background: transparent;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #e5e7eb;
+  cursor: pointer;
+}
+
+.gg-nav-toggle-summary:hover {
+  background: rgba(249, 250, 251, 0.08);
+  border-color: rgba(249, 250, 251, 0.6);
+}
+
 .gg-mobile-toggle {
   border: 1px solid rgba(31, 41, 55, 0.2);
   border-radius: 999px;
@@ -355,6 +396,23 @@ const closeMobileNav = () => {
 
 .gg-mobile-nav-link-logout {
   color: #fecaca;
+}
+
+.gg-mobile-nav-toggle-summary {
+  width: 100%;
+  padding: 0.55rem 0.35rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(55, 65, 81, 0.6);
+  background: transparent;
+  color: #e5e7eb;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-align: left;
+}
+
+.gg-mobile-nav-toggle-summary:hover {
+  background: rgba(249, 250, 251, 0.06);
+  border-color: rgba(249, 250, 251, 0.6);
 }
 
 .gg-mobile-nav-enter-active,
