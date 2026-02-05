@@ -13,7 +13,10 @@
       "priority": "high",
       "ssra": "Y",
       "franchiseId": "3",
-      "notes": "Annual system tune-up and filter replacement."
+      "notes": "Annual system tune-up and filter replacement.",
+      "createdAt": "2026-02-01T09:00:00",
+      "updatedAt": "2026-02-01T09:00:00",
+      "statusChangedAt": "2026-02-01T09:00:00"
     },
     {
       "id": "JOB-1002",
@@ -28,7 +31,10 @@
       "priority": "medium",
       "ssra": "N",
       "franchiseId": "3",
-      "notes": "Check pressure valve and replace if needed."
+      "notes": "Check pressure valve and replace if needed.",
+      "createdAt": "2026-02-01T11:00:00",
+      "updatedAt": "2026-02-01T11:00:00",
+      "statusChangedAt": "2026-02-02T11:00:00"
     },
     {
       "id": "JOB-1003",
@@ -43,7 +49,10 @@
       "priority": "critical",
       "ssra": "Y",
       "franchiseId": "3",
-      "notes": "Roof leak above gym; temporary patch applied."
+      "notes": "Roof leak above gym; temporary patch applied.",
+      "createdAt": "2026-02-02T13:30:00",
+      "updatedAt": "2026-02-03T15:00:00",
+      "statusChangedAt": "2026-02-03T15:00:00"
     },
     {
       "id": "JOB-1004",
@@ -58,7 +67,10 @@
       "priority": "high",
       "ssra": "Y",
       "franchiseId": "1015",
-      "notes": "Crane scheduled for 10:00 AM."
+      "notes": "Crane scheduled for 10:00 AM.",
+      "createdAt": "2026-02-02T09:00:00",
+      "updatedAt": "2026-02-02T09:00:00",
+      "statusChangedAt": "2026-02-02T09:00:00"
     },
     {
       "id": "JOB-1005",
@@ -73,7 +85,10 @@
       "priority": "low",
       "ssra": "N",
       "franchiseId": "1015",
-      "notes": "Building B, units 201–210."
+      "notes": "Building B, units 201–210.",
+      "createdAt": "2026-02-03T10:00:00",
+      "updatedAt": "2026-02-04T10:00:00",
+      "statusChangedAt": "2026-02-04T10:00:00"
     },
     {
       "id": "JOB-1006",
@@ -88,7 +103,10 @@
       "priority": "medium",
       "ssra": "N",
       "franchiseId": "6",
-      "notes": "Client cancelled; to be rescheduled next week."
+      "notes": "Client cancelled; to be rescheduled next week.",
+      "createdAt": "2026-02-03T08:30:00",
+      "updatedAt": "2026-02-04T08:30:00",
+      "statusChangedAt": "2026-02-04T08:30:00"
     },
     {
       "id": "JOB-1007",
@@ -103,7 +121,10 @@
       "priority": "high",
       "ssra": "Y",
       "franchiseId": "3",
-      "notes": "Double & Sills 1 Each."
+      "notes": "Double & Sills 1 Each.",
+      "createdAt": "2026-02-04T01:00:00",
+      "updatedAt": "2026-02-05T13:23:00",
+      "statusChangedAt": "2026-02-05T13:23:00"
     },
     {
       "id": "JOB-1008",
@@ -118,7 +139,10 @@
       "priority": "medium",
       "ssra": "N",
       "franchiseId": "1014",
-      "notes": "Confirm with site manager day before."
+      "notes": "Confirm with site manager day before.",
+      "createdAt": "2026-02-05T07:30:00",
+      "updatedAt": "2026-02-05T07:30:00",
+      "statusChangedAt": "2026-02-05T07:30:00"
     },
     {
       "id": "JOB-1009",
@@ -133,7 +157,10 @@
       "priority": "low",
       "ssra": "N",
       "franchiseId": "1",
-      "notes": "Review outstanding invoices for January."
+      "notes": "Review outstanding invoices for January.",
+      "createdAt": "2026-02-06T10:00:00",
+      "updatedAt": "2026-02-06T10:00:00",
+      "statusChangedAt": "2026-02-06T10:00:00"
     },
     {
       "id": "JOB-1010",
@@ -148,7 +175,10 @@
       "priority": "medium",
       "ssra": "Y",
       "franchiseId": "1015",
-      "notes": "Section 3 left incomplete due to rain."
+      "notes": "Section 3 left incomplete due to rain.",
+      "createdAt": "2026-02-07T08:00:00",
+      "updatedAt": "2026-02-10T12:00:00",
+      "statusChangedAt": "2026-02-10T12:00:00"
     },
     {
       "id": "JOB-1011",
@@ -163,7 +193,10 @@
       "priority": "high",
       "ssra": "Y",
       "franchiseId": "6",
-      "notes": "Ground floor to be completed by local crew."
+      "notes": "Ground floor to be completed by local crew.",
+      "createdAt": "2026-02-08T09:15:00",
+      "updatedAt": "2026-02-11T16:00:00",
+      "statusChangedAt": "2026-02-11T16:00:00"
     },
     {
       "id": "JOB-1012",
@@ -178,7 +211,10 @@
       "priority": "medium",
       "ssra": "N",
       "franchiseId": "1021",
-      "notes": "After-hours job; access via rear roller door."
+      "notes": "After-hours job; access via rear roller door.",
+      "createdAt": "2026-02-10T18:00:00",
+      "updatedAt": "2026-02-14T22:00:00",
+      "statusChangedAt": "2026-02-14T22:00:00"
     },
     {
       "id": "JOB-1013",
@@ -193,7 +229,10 @@
       "priority": "low",
       "ssra": "N",
       "franchiseId": "1017",
-      "notes": "New franchisee induction and safety training."
+      "notes": "New franchisee induction and safety training.",
+      "createdAt": "2026-02-12T09:00:00",
+      "updatedAt": "2026-02-18T17:00:00",
+      "statusChangedAt": "2026-02-18T09:00:00"
     },
     {
       "id": "JOB-1014",
@@ -208,7 +247,10 @@
       "priority": "low",
       "ssra": "N",
       "franchiseId": "1014",
-      "notes": "Client postponed indefinitely; mark as rejected."
+      "notes": "Client postponed indefinitely; mark as rejected.",
+      "createdAt": "2026-02-15T08:00:00",
+      "updatedAt": "2026-02-22T12:30:00",
+      "statusChangedAt": "2026-02-22T12:30:00"
     }
   ]
 }

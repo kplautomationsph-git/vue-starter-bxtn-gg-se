@@ -89,16 +89,19 @@ const toggleHeaderSummary = () => {
             <RouterLink to="/" class="gg-nav-link">Schedule</RouterLink>
           </li>
           <li class="gg-nav-item">
-            <a href="#" class="gg-nav-link">Jobs</a>
+            <RouterLink to="/estimator" class="gg-nav-link">Estimator</RouterLink>
           </li>
           <li class="gg-nav-item">
-            <a href="#" class="gg-nav-link">Invoicing</a>
+            <RouterLink to="/jobs" class="gg-nav-link">Jobs</RouterLink>
           </li>
           <li class="gg-nav-item">
-            <a href="#" class="gg-nav-link">Administration</a>
+            <RouterLink to="/invoicing" class="gg-nav-link">Invoicing</RouterLink>
           </li>
           <li class="gg-nav-item">
-            <a href="#" class="gg-nav-link">Support Log</a>
+            <RouterLink to="/administration" class="gg-nav-link">Administration</RouterLink>
+          </li>
+          <li class="gg-nav-item">
+            <RouterLink to="/support-log" class="gg-nav-link">Support Log</RouterLink>
           </li>
           <li class="gg-nav-item gg-nav-item-right">
             <button
@@ -146,16 +149,49 @@ const toggleHeaderSummary = () => {
               </RouterLink>
             </li>
             <li class="gg-mobile-nav-item">
-              <a href="#" class="gg-mobile-nav-link">Jobs</a>
+              <RouterLink
+                to="/estimator"
+                class="gg-mobile-nav-link"
+                @click="closeMobileNav"
+              >
+                Estimator
+              </RouterLink>
             </li>
             <li class="gg-mobile-nav-item">
-              <a href="#" class="gg-mobile-nav-link">Invoicing</a>
+              <RouterLink
+                to="/jobs"
+                class="gg-mobile-nav-link"
+                @click="closeMobileNav"
+              >
+                Jobs
+              </RouterLink>
             </li>
             <li class="gg-mobile-nav-item">
-              <a href="#" class="gg-mobile-nav-link">Administration</a>
+              <RouterLink
+                to="/invoicing"
+                class="gg-mobile-nav-link"
+                @click="closeMobileNav"
+              >
+                Invoicing
+              </RouterLink>
             </li>
             <li class="gg-mobile-nav-item">
-              <a href="#" class="gg-mobile-nav-link">Support Log</a>
+              <RouterLink
+                to="/administration"
+                class="gg-mobile-nav-link"
+                @click="closeMobileNav"
+              >
+                Administration
+              </RouterLink>
+            </li>
+            <li class="gg-mobile-nav-item">
+              <RouterLink
+                to="/support-log"
+                class="gg-mobile-nav-link"
+                @click="closeMobileNav"
+              >
+                Support Log
+              </RouterLink>
             </li>
             <li class="gg-mobile-nav-item">
               <button
