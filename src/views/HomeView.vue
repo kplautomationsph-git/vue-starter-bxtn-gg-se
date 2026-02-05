@@ -1,8 +1,10 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, inject } from 'vue'
 import scheduleData from '@/data/schedule.json'
 
 const today = new Date()
+
+const jobs = ref([...scheduleData.jobs])
 
 const formatDateKey = (date) => {
   const d = new Date(date)
@@ -30,6 +32,177 @@ const addDays = (date, amount) => {
 const selectedDate = ref(formatDateKey(today))
 const currentWeekStart = ref(getWeekStart(today))
 const viewMode = ref('week') // 'day' | 'week' | 'month'
+
+const timeOptions = [
+  { label: '', value: '' },
+  { label: '12:00 AM', value: '00:00' },
+  { label: '12:30 AM', value: '00:30' },
+  { label: '01:00 AM', value: '01:00' },
+  { label: '01:30 AM', value: '01:30' },
+  { label: '02:00 AM', value: '02:00' },
+  { label: '02:30 AM', value: '02:30' },
+  { label: '03:00 AM', value: '03:00' },
+  { label: '03:30 AM', value: '03:30' },
+  { label: '04:00 AM', value: '04:00' },
+  { label: '04:30 AM', value: '04:30' },
+  { label: '05:00 AM', value: '05:00' },
+  { label: '05:30 AM', value: '05:30' },
+  { label: '06:00 AM', value: '06:00' },
+  { label: '06:30 AM', value: '06:30' },
+  { label: '07:00 AM', value: '07:00' },
+  { label: '07:30 AM', value: '07:30' },
+  { label: '08:00 AM', value: '08:00' },
+  { label: '08:30 AM', value: '08:30' },
+  { label: '09:00 AM', value: '09:00' },
+  { label: '09:30 AM', value: '09:30' },
+  { label: '10:00 AM', value: '10:00' },
+  { label: '10:30 AM', value: '10:30' },
+  { label: '11:00 AM', value: '11:00' },
+  { label: '11:30 AM', value: '11:30' },
+  { label: '12:00 PM', value: '12:00' },
+  { label: '12:30 PM', value: '12:30' },
+  { label: '01:00 PM', value: '13:00' },
+  { label: '01:30 PM', value: '13:30' },
+  { label: '02:00 PM', value: '14:00' },
+  { label: '02:30 PM', value: '14:30' },
+  { label: '03:00 PM', value: '15:00' },
+  { label: '03:30 PM', value: '15:30' },
+  { label: '04:00 PM', value: '16:00' },
+  { label: '04:30 PM', value: '16:30' },
+  { label: '05:00 PM', value: '17:00' },
+  { label: '05:30 PM', value: '17:30' },
+  { label: '06:00 PM', value: '18:00' },
+  { label: '06:30 PM', value: '18:30' },
+  { label: '07:00 PM', value: '19:00' },
+  { label: '07:30 PM', value: '19:30' },
+  { label: '08:00 PM', value: '20:00' },
+  { label: '08:30 PM', value: '20:30' },
+  { label: '09:00 PM', value: '21:00' },
+  { label: '09:30 PM', value: '21:30' },
+  { label: '10:00 PM', value: '22:00' },
+  { label: '10:30 PM', value: '22:30' },
+  { label: '11:00 PM', value: '23:00' },
+  { label: '11:30 PM', value: '23:30' }
+]
+
+const ssraJobStepOptions = [
+  { value: '0', label: '' },
+  { value: '9', label: 'Goop Windows and tape sliding door sills' },
+  { value: '2', label: 'Goop Windows' },
+  { value: '3', label: 'Goop Bathtubs/Shower Bases' },
+  { value: '4', label: 'Goop Benchtops/Cabinetry' },
+  { value: '5', label: 'Goop Floors' },
+  { value: '6', label: 'Goop Roof' },
+  { value: '7', label: 'Goop Spraybooth' },
+  { value: '8', label: 'Frames Taped' }
+]
+
+const ssraHazardOptions = [
+  { value: '0', label: '' },
+  { value: '2', label: 'Falling from height/tripping' },
+  { value: '3', label: 'Tripping and Slipping' },
+  { value: '4', label: 'Tripping' },
+  { value: '5', label: 'Slipping' },
+  { value: '6', label: 'Falling' },
+  { value: '7', label: 'Blinding' },
+  { value: '8', label: 'Others - manually type' }
+]
+
+const ssraRiskLevelOptions = [
+  { value: '0', label: '' },
+  {
+    value: '2',
+    label: 'H1: high level of harm - potential death or permanent disability '
+  },
+  {
+    value: '3',
+    label: 'M2: medium level of harm - potential temporary disability '
+  },
+  {
+    value: '4',
+    label:
+      'L3: low level of harm - incident has potential for person to require first aid '
+  }
+]
+
+const ssraRankingOptions = [
+  { value: '0', label: '' },
+  { value: '2', label: 'Likely 1- Could happen frequently ' },
+  { value: '3', label: 'Moderate 2 - Could happen occasionally ' },
+  {
+    value: '4',
+    label: 'Unlikely 3 - May occur only in exceptional circumstances '
+  }
+]
+
+const ssraControlsOptions = [
+  { value: '0', label: '' },
+  {
+    value: '4',
+    label: 'Remove sliding window sashes from upper floor, Goop and replace'
+  },
+  { value: '6', label: 'Apply Goop on supplied scaffold' },
+  { value: '5', label: 'Goop upper windows from ground with extension pole' },
+  {
+    value: '7',
+    label: 'Look for tripping hazards, remove tripping hazard if possible'
+  },
+  {
+    value: '8',
+    label: 'Use correct PPE including safety glasses if glass is gleamingly bright'
+  },
+  { value: '9', label: 'Others - manually type' },
+  { value: '10', label: 'Taping Frames' }
+]
+
+const ssraYesNoNaOptions = [
+  { value: '', label: '' },
+  { value: 'Yes', label: 'Yes' },
+  { value: 'No', label: 'No' },
+  { value: 'N/A', label: 'N/A' }
+]
+
+const accountCustomerOptions = [
+  { value: '0', label: '' },
+  { value: '10412', label: '1AA- test customer' },
+  { value: '10985', label: '360 Windows H/O' },
+  { value: '2053', label: '3AK Construction' },
+  { value: '11597', label: '45.Fortem Projects' },
+  { value: '7453', label: '4C Construction Pty Ltd T/As Hampton Homes' },
+  { value: '11374', label: '5 Point Projects HO' },
+  { value: '9171', label: 'A Mudnic Development' },
+  { value: '10854', label: 'A S Projects' },
+  { value: '2113', label: 'A.S Spano Builders Pty Ltd' },
+  { value: '3825', label: 'A.S. Spano Builders Pty Ltd' },
+  { value: '10781', label: 'A.S.Spano' },
+  { value: '10671', label: 'AAG Constructions' },
+  { value: '3959', label: 'Abbott Builders' },
+  { value: '11504', label: 'Above Building' },
+  { value: '9182', label: 'Abri Projects' },
+  { value: '11395', label: 'ACSA' },
+  { value: '2042', label: 'Adam Mason Homes' },
+  { value: '8854', label: 'Adenbrook Homes' },
+  { value: '10223', label: 'Advanced Building Services' }
+  // ...remaining options can be loaded from DB/API later
+]
+
+const supervisorOptions = [
+  { value: '', label: '' },
+  { value: 'Teish France', label: 'Teish France' },
+  { value: 'Alex Lee', label: 'Alex Lee' },
+  { value: 'Morgan Diaz', label: 'Morgan Diaz' },
+  { value: 'Taylor Brown', label: 'Taylor Brown' },
+  { value: 'Jordan Smith', label: 'Jordan Smith' }
+]
+
+const technicianOptions = [
+  { value: '', label: '' },
+  { value: 'Alex Lee', label: 'Alex Lee' },
+  { value: 'Morgan Diaz', label: 'Morgan Diaz' },
+  { value: 'Taylor Brown', label: 'Taylor Brown' },
+  { value: 'Jordan Smith', label: 'Jordan Smith' },
+  { value: 'Back Office', label: 'Back Office' }
+]
 
 const weekDays = computed(() => {
   const days = []
@@ -165,8 +338,9 @@ const jobStatusOptions = [
   { value: '4', label: 'Tentative' }
 ]
 
-const selectedFranchise = ref('3')
+const selectedFranchise = ref('0')
 const addressFilter = ref('')
+const isHeaderCollapsed = inject('isHeaderCollapsed', ref(false))
 const jobStatusFilter = computed({
   get() {
     if (!activeStatusFilter.value) return '0'
@@ -183,7 +357,7 @@ const jobStatusFilter = computed({
 })
 
 const jobsMatchingFiltersNoFranchise = computed(() => {
-  return scheduleData.jobs.filter((job) => {
+  return jobs.value.filter((job) => {
     if (activeStatusFilter.value) {
       let jobStatusKey = String(job.status).toLowerCase()
       if (jobStatusKey === 'in_progress') jobStatusKey = 'incomplete'
@@ -269,6 +443,19 @@ const jobsForCurrentMonth = computed(() => {
   return Object.values(groups).sort((a, b) => (a.dateKey < b.dateKey ? -1 : 1))
 })
 
+const jobsInCurrentView = computed(() => {
+  if (viewMode.value === 'day') {
+    return jobsForSelectedDate.value
+  }
+
+  if (viewMode.value === 'week') {
+    return jobsForCurrentWeek.value.flatMap((day) => day.jobs)
+  }
+
+  // month
+  return jobsForCurrentMonth.value.flatMap((group) => group.jobs)
+})
+
 const currentMonthLabel = computed(() => {
   const anyDay = currentWeekStart.value
   return anyDay.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
@@ -337,7 +524,7 @@ const jobsInCurrentScope = computed(() => {
 
 const franchiseCounts = computed(() => {
   const counts = {}
-  jobsInCurrentScope.value.forEach((job) => {
+  jobsInCurrentView.value.forEach((job) => {
     const id = job.franchiseId || '0'
     counts[id] = (counts[id] || 0) + 1
   })
@@ -347,7 +534,7 @@ const franchiseCounts = computed(() => {
 const franchises = computed(() => {
   return franchiseBase.map((item) => {
     if (item.value === '0') {
-      const total = jobsInCurrentScope.value.length
+      const total = jobsInCurrentView.value.length
       return { value: item.value, label: `All (${total})` }
     }
     const count = franchiseCounts.value[item.value] || 0
@@ -481,7 +668,7 @@ const dashboardStats = computed(() => {
     cancelled: 0
   }
 
-  scheduleData.jobs.forEach((job) => {
+  jobs.value.forEach((job) => {
     if (!job?.date) return
 
     const [yearStr, monthStr] = job.date.split('-')
@@ -644,6 +831,7 @@ const setStatusFilter = (key) => {
 const resetFilters = () => {
   addressFilter.value = ''
   jobStatusFilter.value = '0'
+  selectedFranchise.value = '0'
 }
 
 const showAllJobs = () => {
@@ -651,11 +839,221 @@ const showAllJobs = () => {
   addressFilter.value = ''
   activeStatusFilter.value = null
 }
+
+const nextJobSequence = ref(
+  jobs.value.reduce((max, job) => {
+    const numeric = Number(String(job.id || '').replace('JOB-', '')) || 0
+    return Math.max(max, numeric)
+  }, 1000) + 1
+)
+
+const createEmptyJobDraft = () => ({
+  id: '',
+  title: '',
+  customer: '',
+  address: '',
+  date: '',
+  startTime: '',
+  endTime: '',
+  status: 'scheduled',
+  technician: '',
+  priority: 'medium',
+  ssra: 'N',
+  franchiseId: '',
+  notes: '',
+  contactName: '',
+  contactPhone: '',
+  poNumber: '',
+  batchNumber: '',
+  createdDate: formatDateKey(today),
+  orderDate: formatDateKey(today),
+  scheduledBy: 'Teish France',
+  rejectedReason: '',
+  repeatJob: false,
+  accountCustomer: '',
+  supervisor: '',
+  technicianNotes: '',
+  ssraEmail: '',
+  ssraDetail: {
+    storey: '',
+    risk1JobStep: '',
+    risk1Hazard: '',
+    risk1RiskLevel: '',
+    risk1Ranking: '',
+    risk2JobStep: '',
+    risk2Hazard: '',
+    risk2RiskLevel: '',
+    risk2Ranking: '',
+    risk3JobStep: '',
+    risk3Hazard: '',
+    risk3RiskLevel: '',
+    risk3Ranking: '',
+    q2SignsInPlace: '',
+    q3SiteAccessible: '',
+    q4EdgeProtectionEncompassArea: '',
+    q5ScaffoldCondition: '',
+    q6PpeBeingWorn: '',
+    q7AccessBetweenLevelsSecure: '',
+    q8DropEdgesBarricaded: '',
+    q9FallingMaterialsControlled: '',
+    q10HousekeepingMaintained: '',
+    q11ManualHandlingFollowed: '',
+    q12MaterialStoredSafely: '',
+    q13AccessClearOfHazards: '',
+    q14SafetyDataSheetsAvailable: '',
+    q15LaddersUsedCorrectly: '',
+    q16OnsiteToiletProvided: '',
+    q17FirstAidKitAvailable: '',
+    q18CopyOfSwmsAvailable: '',
+    q19NearOpenTrench: '',
+    q20NearUnprotectedFallZones: '',
+    q21MobilePlantOperating: '',
+    q22SecurityFenceSecured: '',
+    checklistNotes: '',
+    controlsPreset: '',
+    controlsOther: '',
+    controlsAdditional: '',
+    siteManagerContacted: '',
+    siteManagerWhy: '',
+    allActionsImplemented: '',
+    swmsVersion: 'AUG 2025',
+    ssraCompleted: false,
+    ssraSigned: false
+  }
+})
+
+const showAddJobModal = ref(false)
+const addJobContext = ref({
+  dateKey: formatDateKey(today)
+})
+const newJobDraft = ref(createEmptyJobDraft())
+const addJobTab = ref('details')
+
+const openAddJobModalForDate = (dateKey) => {
+  addJobContext.value = {
+    dateKey
+  }
+
+  newJobDraft.value = {
+    ...createEmptyJobDraft(),
+    date: dateKey,
+    franchiseId: selectedFranchise.value !== '0' ? selectedFranchise.value : ''
+  }
+
+  showAddJobModal.value = true
+}
+
+const closeAddJobModal = () => {
+  showAddJobModal.value = false
+}
+
+const buildJobPayload = () => {
+  const base = newJobDraft.value
+  const idNumber = nextJobSequence.value
+  nextJobSequence.value += 1
+
+  return {
+    id: `JOB-${String(idNumber).padStart(4, '0')}`,
+    date: base.date,
+    title: base.title || 'New Job',
+    customer: base.customer,
+    address: base.address,
+    startTime: base.startTime || '',
+    endTime: base.endTime || '',
+    status: base.status || 'scheduled',
+    technician: base.technician || '',
+    priority: base.priority || 'medium',
+    ssra: base.ssra || 'N',
+    franchiseId:
+      base.franchiseId || (selectedFranchise.value !== '0' ? selectedFranchise.value : '0'),
+    notes: base.notes || '',
+    contactName: base.contactName || '',
+    contactPhone: base.contactPhone || '',
+    poNumber: base.poNumber || '',
+    batchNumber: base.batchNumber || '',
+    createdDate: base.createdDate || formatDateKey(today),
+    orderDate: base.orderDate || formatDateKey(today),
+    scheduledBy: base.scheduledBy || 'Teish France',
+    rejectedReason: base.rejectedReason || '',
+    repeatJob: Boolean(base.repeatJob),
+    accountCustomer: base.accountCustomer || '',
+    supervisor: base.supervisor || '',
+    technicianNotes: base.technicianNotes || '',
+    ssraEmail: base.ssraEmail || '',
+    ssraDetail: {
+      storey: base.ssraDetail?.storey || '',
+      risk1JobStep: base.ssraDetail?.risk1JobStep || '',
+      risk1Hazard: base.ssraDetail?.risk1Hazard || '',
+      risk1RiskLevel: base.ssraDetail?.risk1RiskLevel || '',
+      risk1Ranking: base.ssraDetail?.risk1Ranking || '',
+      risk2JobStep: base.ssraDetail?.risk2JobStep || '',
+      risk2Hazard: base.ssraDetail?.risk2Hazard || '',
+      risk2RiskLevel: base.ssraDetail?.risk2RiskLevel || '',
+      risk2Ranking: base.ssraDetail?.risk2Ranking || '',
+      risk3JobStep: base.ssraDetail?.risk3JobStep || '',
+      risk3Hazard: base.ssraDetail?.risk3Hazard || '',
+      risk3RiskLevel: base.ssraDetail?.risk3RiskLevel || '',
+      risk3Ranking: base.ssraDetail?.risk3Ranking || '',
+      q2SignsInPlace: base.ssraDetail?.q2SignsInPlace || '',
+      q3SiteAccessible: base.ssraDetail?.q3SiteAccessible || '',
+      q4EdgeProtectionEncompassArea: base.ssraDetail?.q4EdgeProtectionEncompassArea || '',
+      q5ScaffoldCondition: base.ssraDetail?.q5ScaffoldCondition || '',
+      q6PpeBeingWorn: base.ssraDetail?.q6PpeBeingWorn || '',
+      q7AccessBetweenLevelsSecure: base.ssraDetail?.q7AccessBetweenLevelsSecure || '',
+      q8DropEdgesBarricaded: base.ssraDetail?.q8DropEdgesBarricaded || '',
+      q9FallingMaterialsControlled: base.ssraDetail?.q9FallingMaterialsControlled || '',
+      q10HousekeepingMaintained: base.ssraDetail?.q10HousekeepingMaintained || '',
+      q11ManualHandlingFollowed: base.ssraDetail?.q11ManualHandlingFollowed || '',
+      q12MaterialStoredSafely: base.ssraDetail?.q12MaterialStoredSafely || '',
+      q13AccessClearOfHazards: base.ssraDetail?.q13AccessClearOfHazards || '',
+      q14SafetyDataSheetsAvailable: base.ssraDetail?.q14SafetyDataSheetsAvailable || '',
+      q15LaddersUsedCorrectly: base.ssraDetail?.q15LaddersUsedCorrectly || '',
+      q16OnsiteToiletProvided: base.ssraDetail?.q16OnsiteToiletProvided || '',
+      q17FirstAidKitAvailable: base.ssraDetail?.q17FirstAidKitAvailable || '',
+      q18CopyOfSwmsAvailable: base.ssraDetail?.q18CopyOfSwmsAvailable || '',
+      q19NearOpenTrench: base.ssraDetail?.q19NearOpenTrench || '',
+      q20NearUnprotectedFallZones: base.ssraDetail?.q20NearUnprotectedFallZones || '',
+      q21MobilePlantOperating: base.ssraDetail?.q21MobilePlantOperating || '',
+      q22SecurityFenceSecured: base.ssraDetail?.q22SecurityFenceSecured || '',
+      checklistNotes: base.ssraDetail?.checklistNotes || '',
+      controlsPreset: base.ssraDetail?.controlsPreset || '',
+      controlsOther: base.ssraDetail?.controlsOther || '',
+      controlsAdditional: base.ssraDetail?.controlsAdditional || '',
+      siteManagerContacted: base.ssraDetail?.siteManagerContacted || '',
+      siteManagerWhy: base.ssraDetail?.siteManagerWhy || '',
+      allActionsImplemented: base.ssraDetail?.allActionsImplemented || '',
+      swmsVersion: base.ssraDetail?.swmsVersion || 'AUG 2025',
+      ssraCompleted: Boolean(base.ssraDetail?.ssraCompleted),
+      ssraSigned: Boolean(base.ssraDetail?.ssraSigned)
+    }
+  }
+}
+
+const saveNewJob = () => {
+  const draft = newJobDraft.value
+
+  if (
+    !draft.date ||
+    !draft.franchiseId ||
+    !draft.status ||
+    !draft.orderDate ||
+    !draft.accountCustomer ||
+    !draft.contactName ||
+    !draft.address
+  ) {
+    window.alert?.('Please fill in all required fields (marked with *).')
+    return
+  }
+
+  const payload = buildJobPayload()
+  jobs.value.push(payload)
+  showAddJobModal.value = false
+}
 </script>
 
 <template>
   <main class="schedule-page">
-    <section class="schedule-header">
+    <section v-if="!isHeaderCollapsed" class="schedule-header">
       <div>
         <h1 class="schedule-title">Job schedule</h1>
         <p class="schedule-subtitle">
@@ -814,7 +1212,7 @@ const showAllJobs = () => {
     <section class="schedule-body">
       <section class="jobs-panel">
         <header class="jobs-header">
-          <div>
+          <div class="jobs-heading-row">
             <h2 class="jobs-title">
               <span v-if="viewMode === 'day'">
                 {{ selectedDateLabel }}
@@ -826,7 +1224,10 @@ const showAllJobs = () => {
                 {{ monthRangeLabel }}
               </span>
             </h2>
-            <p class="jobs-subtitle">
+
+            <span class="jobs-heading-divider">•</span>
+
+            <span class="jobs-subtitle jobs-subtitle-inline">
               <span v-if="viewMode === 'day'">
                 {{ formatJobsSummary(jobsForSelectedDate.length, 'day') }}
               </span>
@@ -846,10 +1247,11 @@ const showAllJobs = () => {
                   )
                 }}
               </span>
-            </p>
-            <p
+            </span>
+
+            <span
               v-if="smsAlertsDueInCurrentScope"
-              class="jobs-subtitle jobs-subtitle-secondary jobs-subtitle-secondary--sms"
+              class="jobs-subtitle jobs-subtitle-secondary jobs-subtitle-inline jobs-subtitle-secondary--sms"
             >
               {{
                 formatSmsSummary(
@@ -857,7 +1259,7 @@ const showAllJobs = () => {
                   viewMode === 'day' ? 'day' : viewMode === 'week' ? 'week' : 'month'
                 )
               }}
-            </p>
+            </span>
           </div>
 
           <div class="jobs-header-controls">
@@ -923,7 +1325,7 @@ const showAllJobs = () => {
               type="button"
               class="jobs-add-button"
               aria-label="Add job for this day"
-              @click="() => window.alert?.(`Add job for ${selectedDateLabel}`)"
+              @click="openAddJobModalForDate(selectedDate)"
             >
               +
             </button>
@@ -1014,7 +1416,7 @@ const showAllJobs = () => {
               <button
                 type="button"
                 class="jobs-add-button"
-                @click="() => window.alert?.(`Add job for ${day.label}`)"
+                @click="openAddJobModalForDate(day.dateKey)"
                 aria-label="Add job for this day"
               >
                 +
@@ -1133,7 +1535,7 @@ const showAllJobs = () => {
                     type="button"
                     class="month-add-button"
                     aria-label="Add job for this day"
-                    @click="() => window.alert?.(`Add job for ${day.date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}`)"
+                    @click="openAddJobModalForDate(day.key)"
                   >
                     +
                   </button>
@@ -1180,10 +1582,878 @@ const showAllJobs = () => {
         </div>
       </section>
     </section>
+
+    <div v-if="showAddJobModal" class="add-job-backdrop" @click.self="closeAddJobModal">
+      <section class="add-job-modal" role="dialog" aria-modal="true">
+        <header class="add-job-header">
+          <h2 class="add-job-title">Add Job</h2>
+          <button type="button" class="add-job-close" @click="closeAddJobModal">
+            ×
+          </button>
+        </header>
+
+        <form class="add-job-form" @submit.prevent="saveNewJob">
+          <div class="add-job-tabs" role="tablist">
+            <button
+              type="button"
+              class="add-job-tab-button"
+              :class="{ 'is-active': addJobTab === 'details' }"
+              role="tab"
+              @click="addJobTab = 'details'"
+            >
+              Details
+            </button>
+            <button
+              type="button"
+              class="add-job-tab-button"
+              :class="{ 'is-active': addJobTab === 'checklist' }"
+              role="tab"
+              @click="addJobTab = 'checklist'"
+            >
+              Site Conditions
+            </button>
+            <button
+              type="button"
+              class="add-job-tab-button"
+              :class="{ 'is-active': addJobTab === 'risks' }"
+              role="tab"
+              @click="addJobTab = 'risks'"
+            >
+              Job Risks &amp; Controls
+            </button>
+          </div>
+
+          <div v-if="addJobTab === 'details'" class="add-job-tab-panel">
+            <div class="add-job-grid">
+              <div class="add-job-field">
+                <label class="add-job-label">
+                  Job Date <span class="add-job-required">*</span>
+                </label>
+                <div class="add-job-static">
+                  {{ addJobContext.dateKey }}
+                </div>
+              </div>
+
+              <div class="add-job-field">
+                <label class="add-job-label">
+                  Order Date <span class="add-job-required">*</span>
+                </label>
+                <input v-model="newJobDraft.orderDate" type="date" class="add-job-input" />
+              </div>
+
+              <div class="add-job-field">
+                <label class="add-job-label">
+                  Franchise <span class="add-job-required">*</span>
+                </label>
+                <select v-model="newJobDraft.franchiseId" class="add-job-input">
+                  <option value="">Select franchise</option>
+                  <option
+                    v-for="f in franchiseBase.filter((item) => item.value !== '0')"
+                    :key="f.value"
+                    :value="f.value"
+                  >
+                    {{ f.name }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="add-job-field">
+                <label class="add-job-label">
+                  Job Status <span class="add-job-required">*</span>
+                </label>
+                <select v-model="newJobDraft.status" class="add-job-input">
+                  <option
+                    v-for="item in statusLegend"
+                    :key="item.key"
+                    :value="item.key"
+                  >
+                    {{ item.label }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="add-job-field add-job-field-full">
+                <label class="add-job-label">If Rejected-Reason Why</label>
+                <textarea
+                  v-model="newJobDraft.rejectedReason"
+                  rows="2"
+                  class="add-job-input"
+                ></textarea>
+              </div>
+
+              <div class="add-job-field">
+                <label class="add-job-label">Scheduled By</label>
+                <input
+                  v-model="newJobDraft.scheduledBy"
+                  type="text"
+                  class="add-job-input"
+                />
+              </div>
+
+              <div class="add-job-field">
+                <label class="add-job-label">Job No.</label>
+                <div class="add-job-static">
+                  (auto)
+                </div>
+              </div>
+
+              <div class="add-job-field add-job-field-full">
+                <label class="add-job-label">Job Times</label>
+                <div class="add-job-times-row">
+                  <select
+                    v-model="newJobDraft.startTime"
+                    class="add-job-input add-job-input-inline"
+                  >
+                    <option
+                      v-for="opt in timeOptions"
+                      :key="`start-${opt.label}`"
+                      :value="opt.value"
+                    >
+                      {{ opt.label }}
+                    </option>
+                  </select>
+                  <span class="add-job-times-separator">to</span>
+                  <select
+                    v-model="newJobDraft.endTime"
+                    class="add-job-input add-job-input-inline"
+                  >
+                    <option
+                      v-for="opt in timeOptions"
+                      :key="`end-${opt.label}`"
+                      :value="opt.value"
+                    >
+                      {{ opt.label }}
+                    </option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="add-job-field">
+                <label class="add-job-label">Repeat Job</label>
+                <div class="add-job-static add-job-static-inline">
+                  <input
+                    id="add-job-repeat"
+                    v-model="newJobDraft.repeatJob"
+                    type="checkbox"
+                  />
+                  <label for="add-job-repeat">Repeat Job</label>
+                </div>
+              </div>
+
+              <div class="add-job-field add-job-field-full">
+                <label class="add-job-label">
+                  Account Customers <span class="add-job-required">*</span>
+                </label>
+                <select v-model="newJobDraft.accountCustomer" class="add-job-input">
+                  <option
+                    v-for="cust in accountCustomerOptions"
+                    :key="cust.value"
+                    :value="cust.value"
+                  >
+                    {{ cust.label }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="add-job-field">
+                <label class="add-job-label">Supervisor</label>
+                <select v-model="newJobDraft.supervisor" class="add-job-input">
+                  <option
+                    v-for="sup in supervisorOptions"
+                    :key="sup.value"
+                    :value="sup.value"
+                  >
+                    {{ sup.label }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="add-job-field">
+                <label class="add-job-label">Technician</label>
+                <select v-model="newJobDraft.technician" class="add-job-input">
+                  <option
+                    v-for="tech in technicianOptions"
+                    :key="tech.value"
+                    :value="tech.value"
+                  >
+                    {{ tech.label }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="add-job-field">
+                <label class="add-job-label">
+                  Job Contact <span class="add-job-required">*</span>
+                </label>
+                <input v-model="newJobDraft.contactName" type="text" class="add-job-input" />
+              </div>
+
+              <div class="add-job-field">
+                <label class="add-job-label">Job Phone</label>
+                <input v-model="newJobDraft.contactPhone" type="tel" class="add-job-input" />
+              </div>
+
+              <div class="add-job-field add-job-field-full">
+                <label class="add-job-label">
+                  Job Address <span class="add-job-required">*</span>
+                </label>
+                <textarea
+                  v-model="newJobDraft.address"
+                  rows="2"
+                  class="add-job-input"
+                ></textarea>
+              </div>
+
+              <div class="add-job-field add-job-field-full">
+                <label class="add-job-label">Job Notes</label>
+                <textarea
+                  v-model="newJobDraft.notes"
+                  rows="3"
+                  class="add-job-input"
+                ></textarea>
+              </div>
+
+              <div class="add-job-field add-job-field-full">
+                <label class="add-job-label">Technician Notes</label>
+                <textarea
+                  v-model="newJobDraft.technicianNotes"
+                  rows="3"
+                  class="add-job-input"
+                ></textarea>
+              </div>
+
+              <div class="add-job-field">
+                <label class="add-job-label">Priority</label>
+                <select v-model="newJobDraft.priority" class="add-job-input">
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                  <option value="critical">Critical</option>
+                </select>
+              </div>
+
+              <div class="add-job-field">
+                <label class="add-job-label">SSRA Email Address</label>
+                <input v-model="newJobDraft.ssraEmail" type="email" class="add-job-input" />
+              </div>
+
+              <div class="add-job-field">
+                <label class="add-job-label">Purchase Order No.</label>
+                <input v-model="newJobDraft.poNumber" type="text" class="add-job-input" />
+              </div>
+
+              <div class="add-job-field">
+                <label class="add-job-label">Batch No.</label>
+                <input v-model="newJobDraft.batchNumber" type="text" class="add-job-input" />
+              </div>
+
+            </div>
+          </div>
+
+          <div v-else-if="addJobTab === 'checklist'" class="add-job-tab-panel">
+            <div class="add-job-grid">
+              <div class="add-job-field">
+                <label class="add-job-label">1. Storey</label>
+                <select v-model="newJobDraft.ssraDetail.storey" class="add-job-input">
+                  <option value="">Select</option>
+                  <option value="single">Single</option>
+                  <option value="double">Double</option>
+                  <option value="multi">Multi</option>
+                </select>
+              </div>
+
+              <div class="add-job-field">
+                <label class="add-job-label">2. Are signs in place?</label>
+                <select v-model="newJobDraft.ssraDetail.q2SignsInPlace" class="add-job-input">
+                  <option value="">Select</option>
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                  <option value="na">N/A</option>
+                </select>
+              </div>
+
+              <div class="add-job-field">
+                <label class="add-job-label">3. Is the job site accessible</label>
+                <select v-model="newJobDraft.ssraDetail.q3SiteAccessible" class="add-job-input">
+                  <option value="">Select</option>
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                  <option value="na">N/A</option>
+                </select>
+              </div>
+
+              <div class="add-job-field">
+                <label class="add-job-label">
+                  4. Does edge protection fully encompass work area?
+                </label>
+                <select
+                  v-model="newJobDraft.ssraDetail.q4EdgeProtectionEncompassArea"
+                  class="add-job-input"
+                >
+                  <option value="">Select</option>
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                  <option value="na">N/A</option>
+                </select>
+              </div>
+
+              <div class="add-job-field">
+                <label class="add-job-label">
+                  5. Are the scaffold/trestle/planks in good condition?
+                </label>
+                <select v-model="newJobDraft.ssraDetail.q5ScaffoldCondition" class="add-job-input">
+                  <option value="">Select</option>
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                  <option value="na">N/A</option>
+                </select>
+              </div>
+
+              <div class="add-job-field">
+                <label class="add-job-label">
+                  6. Is the required personal protective equipment being worn?
+                </label>
+                <select v-model="newJobDraft.ssraDetail.q6PpeBeingWorn" class="add-job-input">
+                  <option value="">Select</option>
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                  <option value="na">N/A</option>
+                </select>
+              </div>
+
+              <div class="add-job-field">
+                <label class="add-job-label">7. Is access between levels secure?</label>
+                <select
+                  v-model="newJobDraft.ssraDetail.q7AccessBetweenLevelsSecure"
+                  class="add-job-input"
+                >
+                  <option value="">Select</option>
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                  <option value="na">N/A</option>
+                </select>
+              </div>
+
+              <div class="add-job-field">
+                <label class="add-job-label">
+                  8. Are all drop edges near working area and access barricaded?
+                </label>
+                <select
+                  v-model="newJobDraft.ssraDetail.q8DropEdgesBarricaded"
+                  class="add-job-input"
+                >
+                  <option value="">Select</option>
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                  <option value="na">N/A</option>
+                </select>
+              </div>
+
+              <div class="add-job-field">
+                <label class="add-job-label">
+                  9. Is potential fall of materials onto persons working below controlled?
+                </label>
+                <select
+                  v-model="newJobDraft.ssraDetail.q9FallingMaterialsControlled"
+                  class="add-job-input"
+                >
+                  <option value="">Select</option>
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                  <option value="na">N/A</option>
+                </select>
+              </div>
+
+              <div class="add-job-field">
+                <label class="add-job-label">10. Is housekeeping maintained?</label>
+                <select
+                  v-model="newJobDraft.ssraDetail.q10HousekeepingMaintained"
+                  class="add-job-input"
+                >
+                  <option value="">Select</option>
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                  <option value="na">N/A</option>
+                </select>
+              </div>
+
+              <div class="add-job-field">
+                <label class="add-job-label">
+                  11. Are manual handling procedures e.g. lifting, being followed?
+                </label>
+                <select
+                  v-model="newJobDraft.ssraDetail.q11ManualHandlingFollowed"
+                  class="add-job-input"
+                >
+                  <option value="">Select</option>
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                  <option value="na">N/A</option>
+                </select>
+              </div>
+
+              <div class="add-job-field">
+                <label class="add-job-label">12. Is material stored in a safe place?</label>
+                <select
+                  v-model="newJobDraft.ssraDetail.q12MaterialStoredSafely"
+                  class="add-job-input"
+                >
+                  <option value="">Select</option>
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                  <option value="na">N/A</option>
+                </select>
+              </div>
+
+              <div class="add-job-field">
+                <label class="add-job-label">
+                  13. Is access kept clear and free of trip hazards/overhead projections?
+                </label>
+                <select
+                  v-model="newJobDraft.ssraDetail.q13AccessClearOfHazards"
+                  class="add-job-input"
+                >
+                  <option value="">Select</option>
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                  <option value="na">N/A</option>
+                </select>
+              </div>
+
+              <div class="add-job-field">
+                <label class="add-job-label">14. Are Safety Data Sheets available?</label>
+                <select
+                  v-model="newJobDraft.ssraDetail.q14SafetyDataSheetsAvailable"
+                  class="add-job-input"
+                >
+                  <option value="">Select</option>
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                  <option value="na">N/A</option>
+                </select>
+              </div>
+
+              <div class="add-job-field">
+                <label class="add-job-label">
+                  15. Are ladders being used correctly and in good condition?
+                </label>
+                <select
+                  v-model="newJobDraft.ssraDetail.q15LaddersUsedCorrectly"
+                  class="add-job-input"
+                >
+                  <option value="">Select</option>
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                  <option value="na">N/A</option>
+                </select>
+              </div>
+
+              <div class="add-job-field">
+                <label class="add-job-label">16. Is an on-site toilet provided?</label>
+                <select
+                  v-model="newJobDraft.ssraDetail.q16OnsiteToiletProvided"
+                  class="add-job-input"
+                >
+                  <option value="">Select</option>
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                  <option value="na">N/A</option>
+                </select>
+              </div>
+
+              <div class="add-job-field">
+                <label class="add-job-label">17. Do you have a first aid kit?</label>
+                <select
+                  v-model="newJobDraft.ssraDetail.q17FirstAidKitAvailable"
+                  class="add-job-input"
+                >
+                  <option value="">Select</option>
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                  <option value="na">N/A</option>
+                </select>
+              </div>
+
+              <div class="add-job-field">
+                <label class="add-job-label">18. Do you have a copy of the SWMS?</label>
+                <select
+                  v-model="newJobDraft.ssraDetail.q18CopyOfSwmsAvailable"
+                  class="add-job-input"
+                >
+                  <option value="">Select</option>
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                  <option value="na">N/A</option>
+                </select>
+              </div>
+
+              <div class="add-job-field">
+                <label class="add-job-label">
+                  19. Are you working in close proximity to an open trench/excavation?
+                </label>
+                <select
+                  v-model="newJobDraft.ssraDetail.q19NearOpenTrench"
+                  class="add-job-input"
+                >
+                  <option value="">Select</option>
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                  <option value="na">N/A</option>
+                </select>
+              </div>
+
+              <div class="add-job-field">
+                <label class="add-job-label">
+                  20. Are you going to work near any unprotected fall zones?
+                </label>
+                <select
+                  v-model="newJobDraft.ssraDetail.q20NearUnprotectedFallZones"
+                  class="add-job-input"
+                >
+                  <option value="">Select</option>
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                  <option value="na">N/A</option>
+                </select>
+              </div>
+
+              <div class="add-job-field">
+                <label class="add-job-label">
+                  21. Is there any mobile powered plant operating on the site?
+                </label>
+                <select
+                  v-model="newJobDraft.ssraDetail.q21MobilePlantOperating"
+                  class="add-job-input"
+                >
+                  <option value="">Select</option>
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                  <option value="na">N/A</option>
+                </select>
+              </div>
+
+              <div class="add-job-field">
+                <label class="add-job-label">
+                  22. Security fence is in place, and secured/locked on leaving site
+                </label>
+                <select
+                  v-model="newJobDraft.ssraDetail.q22SecurityFenceSecured"
+                  class="add-job-input"
+                >
+                  <option value="">Select</option>
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                  <option value="na">N/A</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div v-else class="add-job-tab-panel">
+            <div class="add-job-grid">
+              <div class="add-job-field">
+                <label class="add-job-label">
+                  Job Steps <span class="add-job-required">*</span>
+                </label>
+                <select
+                  v-model="newJobDraft.ssraDetail.risk1JobStep"
+                  class="add-job-input"
+                >
+                  <option v-for="opt in ssraJobStepOptions" :key="opt.value" :value="opt.value">
+                    {{ opt.label }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="add-job-field">
+                <label class="add-job-label">
+                  Hazards <span class="add-job-required">*</span>
+                </label>
+                <select
+                  v-model="newJobDraft.ssraDetail.risk1Hazard"
+                  class="add-job-input"
+                >
+                  <option v-for="opt in ssraHazardOptions" :key="opt.value" :value="opt.value">
+                    {{ opt.label }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="add-job-field">
+                <label class="add-job-label">
+                  Risk Level <span class="add-job-required">*</span>
+                </label>
+                <select
+                  v-model="newJobDraft.ssraDetail.risk1RiskLevel"
+                  class="add-job-input"
+                >
+                  <option v-for="opt in ssraRiskLevelOptions" :key="opt.value" :value="opt.value">
+                    {{ opt.label }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="add-job-field">
+                <label class="add-job-label">
+                  Ranking <span class="add-job-required">*</span>
+                </label>
+                <select
+                  v-model="newJobDraft.ssraDetail.risk1Ranking"
+                  class="add-job-input"
+                >
+                  <option v-for="opt in ssraRankingOptions" :key="opt.value" :value="opt.value">
+                    {{ opt.label }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="add-job-field add-job-field-full">
+                <label class="add-job-label">Risk 2</label>
+              </div>
+
+              <div class="add-job-field">
+                <label class="add-job-label">Job Steps</label>
+                <select
+                  v-model="newJobDraft.ssraDetail.risk2JobStep"
+                  class="add-job-input"
+                >
+                  <option v-for="opt in ssraJobStepOptions" :key="`r2-js-${opt.value}`" :value="opt.value">
+                    {{ opt.label }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="add-job-field">
+                <label class="add-job-label">Hazards</label>
+                <select
+                  v-model="newJobDraft.ssraDetail.risk2Hazard"
+                  class="add-job-input"
+                >
+                  <option v-for="opt in ssraHazardOptions" :key="`r2-h-${opt.value}`" :value="opt.value">
+                    {{ opt.label }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="add-job-field">
+                <label class="add-job-label">Risk Level</label>
+                <select
+                  v-model="newJobDraft.ssraDetail.risk2RiskLevel"
+                  class="add-job-input"
+                >
+                  <option v-for="opt in ssraRiskLevelOptions" :key="`r2-rl-${opt.value}`" :value="opt.value">
+                    {{ opt.label }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="add-job-field">
+                <label class="add-job-label">Ranking</label>
+                <select
+                  v-model="newJobDraft.ssraDetail.risk2Ranking"
+                  class="add-job-input"
+                >
+                  <option v-for="opt in ssraRankingOptions" :key="`r2-rk-${opt.value}`" :value="opt.value">
+                    {{ opt.label }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="add-job-field add-job-field-full">
+                <label class="add-job-label">Risk 3</label>
+              </div>
+
+              <div class="add-job-field">
+                <label class="add-job-label">Job Steps</label>
+                <select
+                  v-model="newJobDraft.ssraDetail.risk3JobStep"
+                  class="add-job-input"
+                >
+                  <option v-for="opt in ssraJobStepOptions" :key="`r3-js-${opt.value}`" :value="opt.value">
+                    {{ opt.label }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="add-job-field">
+                <label class="add-job-label">Hazards</label>
+                <select
+                  v-model="newJobDraft.ssraDetail.risk3Hazard"
+                  class="add-job-input"
+                >
+                  <option v-for="opt in ssraHazardOptions" :key="`r3-h-${opt.value}`" :value="opt.value">
+                    {{ opt.label }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="add-job-field">
+                <label class="add-job-label">Risk Level</label>
+                <select
+                  v-model="newJobDraft.ssraDetail.risk3RiskLevel"
+                  class="add-job-input"
+                >
+                  <option v-for="opt in ssraRiskLevelOptions" :key="`r3-rl-${opt.value}`" :value="opt.value">
+                    {{ opt.label }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="add-job-field">
+                <label class="add-job-label">Ranking</label>
+                <select
+                  v-model="newJobDraft.ssraDetail.risk3Ranking"
+                  class="add-job-input"
+                >
+                  <option v-for="opt in ssraRankingOptions" :key="`r3-rk-${opt.value}`" :value="opt.value">
+                    {{ opt.label }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="add-job-field add-job-field-full">
+                <label class="add-job-label">
+                  Controls <span class="add-job-required">*</span>
+                </label>
+                <select
+                  v-model="newJobDraft.ssraDetail.controlsPreset"
+                  class="add-job-input"
+                >
+                  <option v-for="opt in ssraControlsOptions" :key="opt.value" :value="opt.value">
+                    {{ opt.label }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="add-job-field add-job-field-full">
+                <label class="add-job-label">
+                  Other Job Steps,Hazards,Risk Level,Ranking
+                </label>
+                <textarea
+                  v-model="newJobDraft.ssraDetail.controlsOther"
+                  rows="2"
+                  class="add-job-input"
+                ></textarea>
+              </div>
+
+              <div class="add-job-field add-job-field-full">
+                <label class="add-job-label">Additional Controls</label>
+                <textarea
+                  v-model="newJobDraft.ssraDetail.controlsAdditional"
+                  rows="2"
+                  class="add-job-input"
+                ></textarea>
+              </div>
+
+              <div class="add-job-field add-job-field-full">
+                <label class="add-job-label">
+                  Have you contacted  site manager regarding identified hazards?
+                  <span class="add-job-required">*</span>
+                </label>
+                <select
+                  v-model="newJobDraft.ssraDetail.siteManagerContacted"
+                  class="add-job-input"
+                >
+                  <option
+                    v-for="opt in ssraYesNoNaOptions"
+                    :key="`sm-${opt.value}`"
+                    :value="opt.value"
+                  >
+                    {{ opt.label }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="add-job-field add-job-field-full">
+                <label class="add-job-label">Why</label>
+                <input
+                  v-model="newJobDraft.ssraDetail.siteManagerWhy"
+                  type="text"
+                  class="add-job-input"
+                />
+              </div>
+
+              <div class="add-job-field add-job-field-full">
+                <label class="add-job-label">
+                  Have you implemented all action items?
+                  <span class="add-job-required">*</span>
+                </label>
+                <select
+                  v-model="newJobDraft.ssraDetail.allActionsImplemented"
+                  class="add-job-input"
+                >
+                  <option
+                    v-for="opt in ssraYesNoNaOptions"
+                    :key="`aa-${opt.value}`"
+                    :value="opt.value"
+                  >
+                    {{ opt.label }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="add-job-field add-job-field-full">
+                <label class="add-job-label">SWMS Version</label>
+                <input
+                  v-model="newJobDraft.ssraDetail.swmsVersion"
+                  type="text"
+                  class="add-job-input"
+                  disabled
+                />
+              </div>
+
+              <div class="add-job-field add-job-field-full">
+                <label class="add-job-label">
+                  The risk assessment has been completed in conjunction with our SWMS.
+                </label>
+                <div class="add-job-static add-job-static-inline">
+                  <input
+                    id="add-job-ssra-completed"
+                    v-model="newJobDraft.ssraDetail.ssraCompleted"
+                    type="checkbox"
+                    disabled
+                  />
+                  <label for="add-job-ssra-completed">Yes</label>
+                </div>
+              </div>
+
+              <div class="add-job-field add-job-field-full">
+                <label class="add-job-label">Signed</label>
+                <div class="add-job-static add-job-static-inline">
+                  <input
+                    id="add-job-ssra-signed"
+                    v-model="newJobDraft.ssraDetail.ssraSigned"
+                    type="checkbox"
+                    disabled
+                  />
+                  <label for="add-job-ssra-signed">Yes</label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <footer class="add-job-footer">
+            <button
+              type="button"
+              class="add-job-button add-job-button-secondary"
+              @click="closeAddJobModal"
+            >
+              Cancel
+            </button>
+            <button type="submit" class="add-job-button add-job-button-primary">
+              Save job
+            </button>
+          </footer>
+        </form>
+      </section>
+    </div>
   </main>
 </template>
 
 <style scoped>
+.add-job-required {
+  color: #e02424;
+}
 .schedule-page {
   display: flex;
   flex-direction: column;
@@ -1383,6 +2653,12 @@ const showAllJobs = () => {
   color: var(--gg-color-primary);
 }
 
+.all-jobs-button:hover {
+  background: #f3f4ff;
+  border-color: var(--gg-color-primary);
+  color: var(--gg-color-primary);
+}
+
 .reset-filters-button {
   border-radius: 999px;
   border: none;
@@ -1392,6 +2668,11 @@ const showAllJobs = () => {
   background: transparent;
   color: #6b7280;
   cursor: pointer;
+}
+
+.reset-filters-button:hover {
+  background: #f3f4ff;
+  color: #4b5563;
 }
 
 .filters-row {
@@ -1454,6 +2735,14 @@ const showAllJobs = () => {
 .filter-button-secondary {
   background: #ede9fe;
   color: var(--gg-color-primary);
+}
+
+.filter-button-primary:hover {
+  background: #4c1d95;
+}
+
+.filter-button-secondary:hover {
+  background: #e0e7ff;
 }
 
 .calendar-panel {
@@ -1611,17 +2900,34 @@ const showAllJobs = () => {
   padding: 0 0.2rem;
 }
 
+.jobs-heading-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.jobs-heading-divider {
+  font-size: 0.75rem;
+  color: #d1d5db;
+}
+
 .jobs-title {
-  font-size: 1.3rem;
+  font-size: 1.15rem;
   font-weight: 500;
-  margin-bottom: 0.15rem;
+  margin-bottom: 0;
   color: #111827;
 }
 
 .jobs-subtitle {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   color: #6b7280;
-  margin-bottom: 0.1rem;
+  margin-bottom: 0;
+}
+
+.jobs-subtitle-inline {
+  display: inline-flex;
+  align-items: baseline;
 }
 
 .jobs-subtitle-secondary {
@@ -1653,6 +2959,10 @@ const showAllJobs = () => {
   box-shadow: 0 1px 3px rgba(88, 36, 136, 0.35);
 }
 
+.view-toggle-button:not(.is-active):hover {
+  background: #e5e7eb;
+}
+
 .jobs-today-button {
   border-radius: 999px;
   border: 1px solid rgba(209, 213, 219, 1);
@@ -1662,6 +2972,11 @@ const showAllJobs = () => {
   font-weight: 500;
   color: #374151;
   cursor: pointer;
+}
+
+.jobs-today-button:hover {
+  background: #f3f4ff;
+  border-color: rgba(88, 36, 136, 0.6);
 }
 
 .jobs-list {
@@ -2209,6 +3524,178 @@ const showAllJobs = () => {
   color: #6b7280;
 }
 
+.add-job-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.add-job-modal {
+  width: min(680px, 100% - 2rem);
+  max-height: 90vh;
+  overflow-y: auto;
+  background: #ffffff;
+  border-radius: 0.9rem;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.35);
+  padding: 1rem 1.25rem 1.1rem;
+}
+
+.add-job-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.add-job-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.add-job-close {
+  border: none;
+  background: transparent;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  color: #4b5563;
+}
+
+.add-job-tabs {
+  display: inline-flex;
+  padding: 0.15rem;
+  border-radius: 999px;
+  background: #f3f4f6;
+  margin-bottom: 0.75rem;
+}
+
+.add-job-tab-button {
+  border: none;
+  background: transparent;
+  padding: 0.25rem 0.9rem;
+  font-size: 0.85rem;
+  border-radius: 999px;
+  cursor: pointer;
+  color: #4b5563;
+}
+
+.add-job-tab-button.is-active {
+  background: var(--gg-color-secondary);
+  color: var(--gg-color-primary);
+  box-shadow: 0 1px 3px rgba(88, 36, 136, 0.35);
+}
+
+.add-job-tab-panel {
+  margin-top: 0.25rem;
+}
+
+.add-job-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem 0.75rem;
+}
+
+.add-job-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.add-job-field-full {
+  grid-column: 1 / -1;
+}
+
+.add-job-label {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #4b5563;
+}
+
+.add-job-input {
+  border-radius: 0.5rem;
+  border: 1px solid rgba(209, 213, 219, 1);
+  padding: 0.4rem 0.6rem;
+  font-size: 0.85rem;
+  color: #111827;
+}
+
+.add-job-input:focus {
+  outline: none;
+  border-color: rgba(88, 36, 136, 0.7);
+  box-shadow: 0 0 0 1px rgba(88, 36, 136, 0.35);
+}
+
+.add-job-static {
+  border-radius: 0.5rem;
+  border: 1px solid rgba(209, 213, 219, 0.9);
+  background: #f9fafb;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.85rem;
+  color: #111827;
+}
+
+.add-job-static-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.add-job-times-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.add-job-input-inline {
+  flex: 1 1 auto;
+}
+
+.add-job-times-separator {
+  font-size: 0.8rem;
+  color: #4b5563;
+}
+
+.add-job-footer {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.add-job-button {
+  border-radius: 999px;
+  border: 1px solid transparent;
+  padding: 0.4rem 0.9rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.add-job-button-primary {
+  background: var(--gg-color-primary);
+  color: #ffffff;
+}
+
+.add-job-button-primary:hover {
+  background: #4c1d95;
+}
+
+.add-job-button-secondary {
+  background: #ffffff;
+  border-color: rgba(209, 213, 219, 1);
+  color: #374151;
+}
+
+.add-job-button-secondary:hover {
+  background: #f3f4ff;
+  border-color: rgba(88, 36, 136, 0.6);
+}
+
 @media (max-width: 960px) {
   .schedule-header {
     flex-direction: column;
@@ -2285,6 +3772,20 @@ const showAllJobs = () => {
   .job-row {
     flex-direction: column;
     align-items: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  .add-job-modal {
+    width: 100%;
+    max-width: 100%;
+    max-height: 100vh;
+    height: 100%;
+    border-radius: 0;
+  }
+
+  .add-job-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>
