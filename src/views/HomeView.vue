@@ -33,6 +33,16 @@ const selectedDate = ref(formatDateKey(today))
 const currentWeekStart = ref(getWeekStart(today))
 const viewMode = ref('week') // 'day' | 'week' | 'month'
 
+const isMobile = ref(window.matchMedia?.('(max-width: 640px)').matches ?? false)
+
+if (typeof window !== 'undefined' && window.matchMedia) {
+  const mq = window.matchMedia('(max-width: 640px)')
+  const handler = (event) => {
+    isMobile.value = event.matches
+  }
+  mq.addEventListener?.('change', handler)
+}
+
 const timeOptions = [
   { label: '', value: '' },
   { label: '12:00 AM', value: '00:00' },
@@ -545,6 +555,34 @@ const franchises = computed(() => {
   })
 })
 
+const showMobileFranchisePicker = ref(false)
+const franchiseSearch = ref('')
+
+const filteredFranchisesForPicker = computed(() => {
+  const term = franchiseSearch.value.trim().toLowerCase()
+  if (!term) return franchises.value
+  return franchises.value.filter((f) => f.label.toLowerCase().includes(term))
+})
+
+const selectedFranchiseLabel = computed(() => {
+  const current = franchises.value.find((f) => f.value === selectedFranchise.value)
+  return current ? current.label : 'All'
+})
+
+const showMobileStatusPicker = ref(false)
+const statusSearch = ref('')
+
+const filteredStatusForPicker = computed(() => {
+  const term = statusSearch.value.trim().toLowerCase()
+  if (!term) return jobStatusOptions
+  return jobStatusOptions.filter((opt) => opt.label.toLowerCase().includes(term))
+})
+
+const selectedJobStatusLabel = computed(() => {
+  const current = jobStatusOptions.find((opt) => opt.value === jobStatusFilter.value)
+  return current ? current.label : 'All'
+})
+
 const monthCalendarWeeks = computed(() => {
   const parts = selectedDate.value.split('-')
   if (parts.length !== 3) return []
@@ -769,6 +807,11 @@ const statusLabel = (status) => {
   return map[status] || status
 }
 
+const statusInitial = (status) => {
+  const label = statusLabel(status)
+  return label ? label.charAt(0).toUpperCase() : ''
+}
+
 const statusStyle = (status) => {
   if (!status) {
     return {
@@ -794,14 +837,36 @@ const statusStyle = (status) => {
 }
 
 const jobCompletedLabel = (job) => {
-  if (!job?.date || !job?.endTime) return ''
-  const d = new Date(job.date)
-  const dateStr = d.toLocaleDateString(undefined, {
+  if (!job) return ''
+
+  const ts =
+    job.statusChangedAt && !Number.isNaN(new Date(job.statusChangedAt).getTime())
+      ? new Date(job.statusChangedAt)
+      : job.date && job.endTime
+        ? new Date(`${job.date}T${job.endTime}:00`)
+        : null
+
+  if (!ts || Number.isNaN(ts.getTime())) return ''
+
+  const dateStr = ts.toLocaleDateString(undefined, {
     day: '2-digit',
     month: 'short',
     year: 'numeric'
   })
-  return `Job Completed: ${dateStr} ${job.endTime}`
+
+  const timeStr = ts.toLocaleTimeString(undefined, {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  })
+
+  const key = String(job.status || '').toLowerCase()
+  let prefix = 'Job Updated'
+  if (key === 'completed') prefix = 'Job Completed'
+  else if (key === 'accepted') prefix = 'Job Accepted'
+  else if (key === 'in_progress') prefix = 'Job Started'
+
+  return `${prefix}: ${dateStr} ${timeStr}`
 }
 
 const formatTime12 = (time) => {
@@ -867,6 +932,9 @@ const createEmptyJobDraft = () => ({
   batchNumber: '',
   createdDate: formatDateKey(today),
   orderDate: formatDateKey(today),
+  createdAt: '',
+  updatedAt: '',
+  statusChangedAt: '',
   scheduledBy: 'Teish France',
   rejectedReason: '',
   repeatJob: false,
@@ -923,6 +991,8 @@ const createEmptyJobDraft = () => ({
 })
 
 const showAddJobModal = ref(false)
+const isEditingJob = ref(false)
+const editingJobId = ref(null)
 const addJobContext = ref({
   dateKey: formatDateKey(today)
 })
@@ -940,20 +1010,21 @@ const openAddJobModalForDate = (dateKey) => {
     franchiseId: selectedFranchise.value !== '0' ? selectedFranchise.value : ''
   }
 
+  isEditingJob.value = false
+  editingJobId.value = null
+  addJobTab.value = 'details'
   showAddJobModal.value = true
 }
 
 const closeAddJobModal = () => {
   showAddJobModal.value = false
+  isEditingJob.value = false
+  editingJobId.value = null
 }
 
-const buildJobPayload = () => {
+const buildJobBaseFromDraft = () => {
   const base = newJobDraft.value
-  const idNumber = nextJobSequence.value
-  nextJobSequence.value += 1
-
   return {
-    id: `JOB-${String(idNumber).padStart(4, '0')}`,
     date: base.date,
     title: base.title || 'New Job',
     customer: base.customer,
@@ -973,6 +1044,9 @@ const buildJobPayload = () => {
     batchNumber: base.batchNumber || '',
     createdDate: base.createdDate || formatDateKey(today),
     orderDate: base.orderDate || formatDateKey(today),
+    createdAt: base.createdAt || '',
+    updatedAt: base.updatedAt || '',
+    statusChangedAt: base.statusChangedAt || '',
     scheduledBy: base.scheduledBy || 'Teish France',
     rejectedReason: base.rejectedReason || '',
     repeatJob: Boolean(base.repeatJob),
@@ -1029,6 +1103,85 @@ const buildJobPayload = () => {
   }
 }
 
+const buildJobPayload = () => {
+  const idNumber = nextJobSequence.value
+  nextJobSequence.value += 1
+
+  return {
+    id: `JOB-${String(idNumber).padStart(4, '0')}`,
+    ...buildJobBaseFromDraft()
+  }
+}
+
+const buildUpdatedJobPayload = (existingJob) => ({
+  ...existingJob,
+  ...buildJobBaseFromDraft(),
+  id: existingJob.id
+})
+
+const mapJobToDraft = (job) => {
+  const draft = createEmptyJobDraft()
+
+  return {
+    ...draft,
+    id: job.id || draft.id,
+    title: job.title || draft.title,
+    customer: job.customer || draft.customer,
+    address: job.address || draft.address,
+    date: job.date || draft.date,
+    startTime: job.startTime || draft.startTime,
+    endTime: job.endTime || draft.endTime,
+    status: job.status || draft.status,
+    technician: job.technician || draft.technician,
+    priority: job.priority || draft.priority,
+    ssra: job.ssra || draft.ssra,
+    franchiseId: job.franchiseId || draft.franchiseId,
+    notes: job.notes || draft.notes,
+    contactName: job.contactName || draft.contactName,
+    contactPhone: job.contactPhone || draft.contactPhone,
+    poNumber: job.poNumber || draft.poNumber,
+    batchNumber: job.batchNumber || draft.batchNumber,
+    createdDate: job.createdDate || draft.createdDate,
+    orderDate: job.orderDate || draft.orderDate,
+    createdAt: job.createdAt || draft.createdAt,
+    updatedAt: job.updatedAt || draft.updatedAt,
+    statusChangedAt: job.statusChangedAt || draft.statusChangedAt,
+    scheduledBy: job.scheduledBy || draft.scheduledBy,
+    rejectedReason: job.rejectedReason || draft.rejectedReason,
+    repeatJob: Boolean(job.repeatJob ?? draft.repeatJob),
+    accountCustomer: job.accountCustomer || draft.accountCustomer,
+    supervisor: job.supervisor || draft.supervisor,
+    technicianNotes: job.technicianNotes || draft.technicianNotes,
+    ssraEmail: job.ssraEmail || draft.ssraEmail,
+    ssraDetail: {
+      ...draft.ssraDetail,
+      ...(job.ssraDetail || {})
+    }
+  }
+}
+
+const openEditJobModal = (job) => {
+  editingJobId.value = job.id
+  isEditingJob.value = true
+  addJobContext.value = {
+    dateKey: job.date || formatDateKey(today)
+  }
+  newJobDraft.value = mapJobToDraft(job)
+  addJobTab.value = 'details'
+  showAddJobModal.value = true
+}
+
+const handleMonthJobClick = (dateKey, job) => {
+  if (isMobile.value) {
+    selectedDate.value = dateKey
+    currentWeekStart.value = getWeekStart(new Date(dateKey))
+    viewMode.value = 'day'
+    // Optionally scroll into view or open edit directly; for now, just switch view.
+  } else {
+    openEditJobModal(job)
+  }
+}
+
 const saveNewJob = () => {
   const draft = newJobDraft.value
 
@@ -1045,9 +1198,34 @@ const saveNewJob = () => {
     return
   }
 
-  const payload = buildJobPayload()
-  jobs.value.push(payload)
+  const nowIso = new Date().toISOString()
+
+  if (isEditingJob.value && editingJobId.value) {
+    const index = jobs.value.findIndex((job) => job.id === editingJobId.value)
+    if (index !== -1) {
+      const existing = jobs.value[index]
+      draft.createdAt = existing.createdAt || draft.createdAt || nowIso
+      draft.updatedAt = nowIso
+      draft.statusChangedAt =
+        draft.status && draft.status !== existing.status
+          ? nowIso
+          : existing.statusChangedAt || draft.statusChangedAt || nowIso
+
+      const updated = buildUpdatedJobPayload(existing)
+      jobs.value.splice(index, 1, updated)
+    }
+  } else {
+    draft.createdAt = draft.createdAt || nowIso
+    draft.updatedAt = nowIso
+    draft.statusChangedAt = draft.statusChangedAt || nowIso
+
+    const payload = buildJobPayload()
+    jobs.value.push(payload)
+  }
+
   showAddJobModal.value = false
+  isEditingJob.value = false
+  editingJobId.value = null
 }
 </script>
 
@@ -1163,7 +1341,10 @@ const saveNewJob = () => {
       <div class="filters-row">
         <div class="filter-field filter-field-franchise">
           <label class="filter-label" for="franchise-select">Select Franchise</label>
+
+          <!-- Desktop / tablet native select -->
           <select
+            v-if="!isMobile"
             id="franchise-select"
             v-model="selectedFranchise"
             class="filter-input filter-select"
@@ -1176,6 +1357,19 @@ const saveNewJob = () => {
               {{ franchiseOption.label }}
             </option>
           </select>
+
+          <!-- Mobile-friendly trigger -->
+          <button
+            v-else
+            type="button"
+            class="filter-input mobile-franchise-trigger"
+            @click="showMobileFranchisePicker = true"
+          >
+            <span class="mobile-franchise-trigger-label">
+              {{ selectedFranchiseLabel }}
+            </span>
+            <span class="mobile-franchise-trigger-icon">⌄</span>
+          </button>
         </div>
 
         <div class="filter-field filter-field-address">
@@ -1191,7 +1385,9 @@ const saveNewJob = () => {
 
         <div class="filter-field filter-field-status">
           <label class="filter-label" for="job-status-select">Job Status</label>
+          <!-- Desktop / tablet native select -->
           <select
+            v-if="!isMobile"
             id="job-status-select"
             v-model="jobStatusFilter"
             class="filter-input filter-select"
@@ -1204,6 +1400,19 @@ const saveNewJob = () => {
               {{ status.label }}
             </option>
           </select>
+
+          <!-- Mobile-friendly trigger -->
+          <button
+            v-else
+            type="button"
+            class="filter-input mobile-franchise-trigger"
+            @click="showMobileStatusPicker = true"
+          >
+            <span class="mobile-franchise-trigger-label">
+              {{ selectedJobStatusLabel }}
+            </span>
+            <span class="mobile-franchise-trigger-icon">⌄</span>
+          </button>
         </div>
 
       </div>
@@ -1331,6 +1540,15 @@ const saveNewJob = () => {
             </button>
           </div>
           <article v-for="job in jobsForSelectedDate" :key="job.id" class="job-card">
+            <button
+              type="button"
+              class="job-edit-button"
+              aria-label="Edit job"
+              title="Edit Job"
+              @click="openEditJobModal(job)"
+            >
+              <span class="job-edit-icon">✎</span>
+            </button>
             <div class="job-status-ribbon" :style="statusStyle(job.status)">
               {{ statusLabel(job.status) }}
             </div>
@@ -1428,6 +1646,15 @@ const saveNewJob = () => {
               :key="job.id"
               class="job-card job-card-condensed"
             >
+              <button
+                type="button"
+                class="job-edit-button"
+                aria-label="Edit job"
+                title="Edit Job"
+                @click="openEditJobModal(job)"
+              >
+                <span class="job-edit-icon">✎</span>
+              </button>
               <div class="job-status-ribbon" :style="statusStyle(job.status)">
                 {{ statusLabel(job.status) }}
               </div>
@@ -1503,20 +1730,22 @@ const saveNewJob = () => {
               :key="weekIndex"
               class="month-calendar-week-row"
             >
-              <div
+              <button
                 v-for="day in week"
                 :key="day.key"
+                type="button"
                 class="month-calendar-day-cell"
                 :class="{
                   'is-outside': !day.inCurrentMonth,
                   'is-today': day.isToday
                 }"
+                @click="isMobile && (viewMode = 'day', selectedDate = day.key, currentWeekStart = getWeekStart(new Date(day.key)))"
               >
                 <div class="month-calendar-day-header">
                   <span class="month-calendar-day-number">
                     {{ day.dayOfMonth }}
                   </span>
-                  <div class="month-calendar-day-metrics">
+                  <div v-if="!isMobile" class="month-calendar-day-metrics">
                     <span v-if="day.jobs.length" class="month-calendar-day-count">
                       {{ jobsCountLabel(day.jobs.length) }}
                     </span>
@@ -1532,23 +1761,28 @@ const saveNewJob = () => {
                     </span>
                   </div>
                   <button
+                    v-if="!isMobile"
                     type="button"
                     class="month-add-button"
                     aria-label="Add job for this day"
-                    @click="openAddJobModalForDate(day.key)"
+                    @click.stop="openAddJobModalForDate(day.key)"
                   >
                     +
                   </button>
                 </div>
                 <div class="month-calendar-day-jobs">
-                  <div
+                  <button
                     v-for="job in day.jobs"
                     :key="job.id"
+                    type="button"
                     class="month-calendar-job-chip"
                     :style="statusStyle(job.status)"
+                    @click="handleMonthJobClick(day.key, job)"
+                    title="View Job"
                   >
                     <span class="month-calendar-job-status">
-                      {{ statusLabel(job.status) }}
+                      <span v-if="!isMobile">{{ statusLabel(job.status) }}</span>
+                      <span v-else>{{ statusInitial(job.status) }}</span>
                     </span>
                     <span class="month-calendar-job-title">
                       {{ job.title }}
@@ -1574,14 +1808,106 @@ const saveNewJob = () => {
                         {{ franchiseNameById[job.franchiseId] || 'N/A' }}
                       </div>
                     </div>
-                  </div>
+                  </button>
                 </div>
-              </div>
+              </button>
             </div>
           </div>
         </div>
       </section>
     </section>
+
+    <!-- Mobile franchise picker -->
+    <div
+      v-if="isMobile && showMobileFranchisePicker"
+      class="mobile-franchise-backdrop"
+      @click.self="showMobileFranchisePicker = false"
+    >
+      <section class="mobile-franchise-panel" role="dialog" aria-modal="true">
+        <header class="mobile-franchise-header">
+          <h2 class="mobile-franchise-title">Select Franchise</h2>
+          <button
+            type="button"
+            class="mobile-franchise-close"
+            @click="showMobileFranchisePicker = false"
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </header>
+
+        <div class="mobile-franchise-search">
+          <input
+            v-model="franchiseSearch"
+            type="text"
+            class="mobile-franchise-search-input"
+            placeholder="Search franchises"
+          />
+        </div>
+
+        <div class="mobile-franchise-list">
+          <button
+            v-for="option in filteredFranchisesForPicker"
+            :key="option.value"
+            type="button"
+            class="mobile-franchise-item"
+            :class="{ 'is-active': option.value === selectedFranchise }"
+            @click="
+              selectedFranchise = option.value;
+              showMobileFranchisePicker = false
+            "
+          >
+            <span class="mobile-franchise-item-label">{{ option.label }}</span>
+          </button>
+        </div>
+      </section>
+    </div>
+
+    <!-- Mobile status picker -->
+    <div
+      v-if="isMobile && showMobileStatusPicker"
+      class="mobile-franchise-backdrop"
+      @click.self="showMobileStatusPicker = false"
+    >
+      <section class="mobile-franchise-panel" role="dialog" aria-modal="true">
+        <header class="mobile-franchise-header">
+          <h2 class="mobile-franchise-title">Job Status</h2>
+          <button
+            type="button"
+            class="mobile-franchise-close"
+            @click="showMobileStatusPicker = false"
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </header>
+
+        <div class="mobile-franchise-search">
+          <input
+            v-model="statusSearch"
+            type="text"
+            class="mobile-franchise-search-input"
+            placeholder="Search statuses"
+          />
+        </div>
+
+        <div class="mobile-franchise-list">
+          <button
+            v-for="option in filteredStatusForPicker"
+            :key="option.value"
+            type="button"
+            class="mobile-franchise-item"
+            :class="{ 'is-active': option.value === jobStatusFilter }"
+            @click="
+              jobStatusFilter = option.value;
+              showMobileStatusPicker = false
+            "
+          >
+            <span class="mobile-franchise-item-label">{{ option.label }}</span>
+          </button>
+        </div>
+      </section>
+    </div>
 
     <div v-if="showAddJobModal" class="add-job-backdrop" @click.self="closeAddJobModal">
       <section class="add-job-modal" role="dialog" aria-modal="true">
@@ -2712,6 +3038,118 @@ const saveNewJob = () => {
   background-color: #ffffff;
 }
 
+.mobile-franchise-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  background: #ffffff;
+  border: 1px solid rgba(209, 213, 219, 1);
+  border-radius: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.95rem;
+  color: #111827;
+  cursor: pointer;
+}
+
+.mobile-franchise-trigger-label {
+  flex: 1;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mobile-franchise-trigger-icon {
+  font-size: 0.85rem;
+}
+
+.mobile-franchise-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  z-index: 40;
+}
+
+.mobile-franchise-panel {
+  width: 100%;
+  max-height: 80vh;
+  background: #111827;
+  color: #f9fafb;
+  border-radius: 1.25rem 1.25rem 0 0;
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.4);
+  padding: 0.9rem 0.9rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.mobile-franchise-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mobile-franchise-title {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.mobile-franchise-close {
+  border: none;
+  background: transparent;
+  color: #e5e7eb;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.mobile-franchise-search-input {
+  width: 100%;
+  border-radius: 999px;
+  border: 1px solid rgba(55, 65, 81, 1);
+  padding: 0.45rem 0.85rem;
+  font-size: 0.9rem;
+  background: #111827;
+  color: #f9fafb;
+}
+
+.mobile-franchise-search-input::placeholder {
+  color: #6b7280;
+}
+
+.mobile-franchise-list {
+  margin-top: 0.4rem;
+  overflow-y: auto;
+  padding-right: 0.1rem;
+}
+
+.mobile-franchise-item {
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  color: #e5e7eb;
+  padding: 0.45rem 0.5rem;
+  border-radius: 0.6rem;
+  font-size: 0.88rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mobile-franchise-item.is-active {
+  background: #facc15;
+  color: #111827;
+}
+
+.mobile-franchise-item.is-active .mobile-franchise-item-label {
+  font-weight: 600;
+}
+
 .filter-actions {
   display: flex;
   gap: 0.4rem;
@@ -3052,6 +3490,7 @@ const saveNewJob = () => {
   background: #ffffff;
   color: #111827;
   position: relative;
+   z-index: 2;
 }
 
 .jobs-add-button:hover {
@@ -3310,6 +3749,7 @@ const saveNewJob = () => {
 }
 
 .job-card {
+  position: relative;
   border-radius: 0.75rem;
   padding: 0.9rem 1rem;
   background: #ffffff;
@@ -3320,14 +3760,16 @@ const saveNewJob = () => {
 }
 
 .job-card-condensed {
+  position: relative;
   padding: 0.6rem 0.8rem;
 }
 
 .job-header {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: flex-start;
-  gap: 0.35rem;
+  justify-content: space-between;
+  gap: 0.5rem;
   margin-bottom: 0.4rem;
   min-width: 0;
 }
@@ -3346,10 +3788,9 @@ const saveNewJob = () => {
 }
 
 .job-meta {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   min-width: 0;
   margin-top: 0.1rem;
 }
@@ -3357,6 +3798,69 @@ const saveNewJob = () => {
 .job-time {
   font-size: 0.78rem;
   color: #111827;
+}
+
+.job-edit-button {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba(209, 213, 219, 1);
+  width: 1.4rem;
+  height: 1.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  cursor: pointer;
+  background: #ffffff;
+  color: #111827;
+  transition:
+    background-color 0.12s ease-out,
+    border-color 0.12s ease-out,
+    transform 0.12s ease-out;
+}
+
+.job-edit-button:hover {
+  background: rgba(255, 238, 0, 0.18);
+  border-color: rgba(88, 36, 136, 0.6);
+  transform: translateY(-1px);
+}
+
+.job-edit-icon {
+  display: block;
+  transform: scaleX(-1);
+}
+
+.job-edit-button::after {
+  content: 'Edit Job';
+  position: absolute;
+  top: 120%;
+  left: 50%;
+  transform: translate(-50%, 4px);
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: #111827;
+  color: #f9fafb;
+  font-size: 0.7rem;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  box-shadow: 0 4px 10px rgba(15, 23, 42, 0.35);
+  transition:
+    opacity 0.12s ease-out,
+    transform 0.12s ease-out;
+}
+
+.job-edit-button:hover::after,
+.job-edit-button:focus-visible::after {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.job-card-condensed .job-edit-button {
+  top: 0.35rem;
+  right: 0.4rem;
 }
 
 .job-status {
@@ -3715,6 +4219,11 @@ const saveNewJob = () => {
 
   .filters-row {
     grid-template-columns: 1fr;
+  }
+
+  .filter-field-franchise .filter-input {
+    width: 100%;
+    font-size: 0.95rem;
   }
 
   .filter-actions {
